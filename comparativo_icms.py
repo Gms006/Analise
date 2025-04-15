@@ -141,11 +141,11 @@ elif filtro_grafico == "Relatórios Detalhados":
 
     # Exibir Entradas
     st.subheader("📥 Entradas Filtradas")
-    st.dataframe(entradas_filtradas.fillna("--"), use_container_width=True)
+    st.dataframe(entradas_filtradas.replace({pd.NA: "", None: "", float("nan"): ""}), use_container_width=True)
 
     # Exibir Saídas
     st.subheader("📤 Saídas Filtradas")
-    st.dataframe(saidas_filtradas.fillna("--"), use_container_width=True)
+    st.dataframe(saidas_filtradas.replace({pd.NA: "", None: "", float("nan"): ""}), use_container_width=True)
 
     # Exibir Apuração com crédito acumulado
     st.write("### 📊 Comparativo de Crédito x Débito com Crédito Acumulado")
@@ -160,18 +160,11 @@ elif filtro_grafico == "Relatórios Detalhados":
     def to_excel():
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            entradas_filtradas.fillna('').to_excel(writer, sheet_name="Entradas", index=False)
-            saidas_filtradas.fillna('').to_excel(writer, sheet_name="Saídas", index=False)
+            entradas_filtradas.to_excel(writer, sheet_name="Entradas", index=False)
+            saidas_filtradas.to_excel(writer, sheet_name="Saídas", index=False)
             comparativo_filtrado.to_excel(writer, sheet_name="Apuracao", index=False)
         processed_data = output.getvalue()
         return processed_data
-
-    # Botão para baixar o Excel
-    excel_bytes = to_excel()
-    st.download_button("⬇️ Baixar Relatórios em Excel",
-                       data=excel_bytes,
-                       file_name="Relatorio_ICMS.xlsx",
-                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
     # Botão para baixar o Excel completo
     excel_bytes = to_excel()
