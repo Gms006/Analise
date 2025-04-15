@@ -141,11 +141,11 @@ elif filtro_grafico == "Relatórios Detalhados":
 
     # Exibir Entradas
     st.subheader("📥 Entradas Filtradas")
-    st.dataframe(entradas_filtradas.copy().fillna(''), use_container_width=True)
+    st.dataframe(entradas_filtradas.fillna("--"), use_container_width=True)
 
     # Exibir Saídas
     st.subheader("📤 Saídas Filtradas")
-    st.dataframe(saidas_filtradas.copy().fillna(''), use_container_width=True)
+    st.dataframe(saidas_filtradas.fillna("--"), use_container_width=True)
 
     # Exibir Apuração com crédito acumulado
     st.write("### 📊 Comparativo de Crédito x Débito com Crédito Acumulado")
@@ -171,4 +171,11 @@ elif filtro_grafico == "Relatórios Detalhados":
     st.download_button("⬇️ Baixar Relatórios em Excel",
                        data=excel_bytes,
                        file_name="Relatorio_ICMS.xlsx",
+                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+    # Botão para baixar o Excel completo
+    excel_bytes = to_excel()
+    st.download_button("⬇️ Baixar Relatórios Completos (.xlsx)",
+                       data=excel_bytes,
+                       file_name="Relatorio_ICMS_Completo.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
