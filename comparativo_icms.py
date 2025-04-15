@@ -34,7 +34,7 @@ planilha_contabil = pd.read_excel("Contabilidade.xlsx", sheet_name=None)
 caixa_df = planilha_contabil['Caixa']
 pis_df = planilha_contabil['PIS']
 cofins_df = planilha_contabil['COFINS']
-dre_df = planilha_contabil['DRE']
+dre_df = planilha_contabil['DRE 1º Trimestre']
 
 # ========== FILTROS DINÂMICOS ==========
 st.sidebar.header("🎛️ Filtros")
