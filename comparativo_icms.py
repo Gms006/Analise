@@ -40,8 +40,8 @@ filtro_grafico = st.sidebar.selectbox("Tipo de gráfico:", [
     "Relatórios Detalhados"
 ])
 meses_filtrados = periodos[filtro_periodo]
-entradas_filtradas = entradas[entradas['Mês'].dt.month.isin(meses_filtrados)]
-saidas_filtradas = saidas[saidas['Mês'].dt.month.isin(meses_filtrados)]
+entradas_filtradas = entradas[entradas['Mês'].dt.month.isin(meses_filtrados)].fillna('')
+saidas_filtradas = saidas[saidas['Mês'].dt.month.isin(meses_filtrados)].fillna('')
 
 # ========== DEMONSTRATIVO DO PERÍODO FILTRADO ==========
 creditos = entradas.groupby(entradas['Mês'].dt.to_period('M'))['Valor ICMS'].sum().reset_index(name='ICMS Crédito')
@@ -141,11 +141,11 @@ elif filtro_grafico == "Relatórios Detalhados":
 
     # Exibir Entradas
     st.write("### 📥 Entradas Filtradas")
-    st.dataframe(entradas_filtradas, use_container_width=True)
+    st.dataframe(entradas_filtradas.fillna(''), use_container_width=True)
 
     # Exibir Saídas
     st.write("### 📤 Saídas Filtradas")
-    st.dataframe(saidas_filtradas, use_container_width=True)
+    st.dataframe(saidas_filtradas.fillna(''), use_container_width=True)
 
     # Exibir Apuração com crédito acumulado
     st.write("### 📊 Comparativo de Crédito x Débito com Crédito Acumulado")
@@ -160,9 +160,9 @@ elif filtro_grafico == "Relatórios Detalhados":
     def to_excel():
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            entradas_filtradas.to_excel(writer, sheet_name='Entradas', index=False)
-            saidas_filtradas.to_excel(writer, sheet_name='Saidas', index=False)
-            comparativo_filtrado.to_excel(writer, sheet_name='Apuracao', index=False)
+            entradas_filtradas.fillna('').to_excel(writer, sheet_name="Entradas", index=False)
+            saidas_filtradas.fillna('').to_excel(writer, sheet_name="Saídas", index=False)
+            comparativo_filtrado.to_excel(writer, sheet_name="Apuracao", index=False)
         processed_data = output.getvalue()
         return processed_data
 
