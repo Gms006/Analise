@@ -6,25 +6,36 @@ from io import BytesIO
 
 # ========== CONFIGURAÇÕES ==========
 st.set_page_config(layout="wide")
-st.title("📊 Relatório Interativo de ICMS")
-caminho_planilha = "notas_processadas1.xlsx"
+st.title("📊 Relatório Interativo de ICMS e Análise Contábil")
 
-# ========== LEITURA ==========
-entradas = pd.read_excel(caminho_planilha, sheet_name="Todas Entradas", skiprows=1)
-entradas = entradas.loc[:, ~entradas.columns.to_series().isna()]  # Remove colunas sem nome
+# ========== PLANILHAS ==========
+caminho_icms = "notas_processadas1.xlsx"
+caminho_contab = "Contabilidade.xlsx"
+
+# ========== LEITURA ICMS ==========
+entradas = pd.read_excel(caminho_icms, sheet_name="Todas Entradas", skiprows=1)
+entradas = entradas.loc[:, ~entradas.columns.to_series().isna()]
 entradas.columns = [str(col).strip() for col in entradas.columns]
 entradas = entradas.loc[:, ~entradas.columns.str.contains("Unnamed|^\\d+$", na=False)]
-
-saidas = pd.read_excel(caminho_planilha, sheet_name="Todas Saídas")
-
+saidas = pd.read_excel(caminho_icms, sheet_name="Todas Saídas")
 entradas.columns = entradas.columns.str.strip()
 saidas.columns = saidas.columns.str.strip()
 entradas['Mês'] = pd.to_datetime(entradas['Mês'], errors='coerce')
 saidas['Mês'] = pd.to_datetime(saidas['Mês'], errors='coerce')
-
 for df in [entradas, saidas]:
     for col in ['Valor ICMS', 'Valor Total', 'Alíquota ICMS']:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+# ========== LEITURA PLANILHA CONTABILIDADE ==========
+caixa = pd.read_excel(caminho_contab, sheet_name="Caixa")
+pis = pd.read_excel(caminho_contab, sheet_name="PIS")
+cofins = pd.read_excel(caminho_contab, sheet_name="COFINS")
+dre = pd.read_excel(caminho_contab, sheet_name="DRE 1º Trimestre")
+
+# Padronizar colunas caixa
+caixa.columns = caixa.columns.str.strip()
+caixa['Data'] = pd.to_datetime(caixa['Data'], errors='coerce')
+caixa['Mês'] = caixa['Data'].dt.to_period("M")
 
 # ========== FILTROS ==========
 st.sidebar.header("🎛️ Filtros")
@@ -35,35 +46,16 @@ periodos = {
     "1º Trimestre/2025": [1, 2, 3]
 }
 filtro_periodo = st.sidebar.selectbox("Selecione o período:", list(periodos.keys()))
-filtro_grafico = st.sidebar.selectbox("Tipo de gráfico:", [
+filtro_aba = st.sidebar.selectbox("Tipo de Análise:", [
     "Mapa por UF",
     "Comparativo de Crédito x Débito",
     "Apuração com Crédito Acumulado",
-    "Relatórios Detalhados"
+    "Relatórios Detalhados",
+    "Contabilidade e Caixa"
 ])
 meses_filtrados = periodos[filtro_periodo]
-entradas_filtradas = entradas[entradas['Mês'].dt.month.isin(meses_filtrados)].fillna("")
-saidas_filtradas = saidas[saidas['Mês'].dt.month.isin(meses_filtrados)].fillna("")
 
-# ========== APURAÇÃO ==========
-creditos = entradas.groupby(entradas['Mês'].dt.to_period('M'))['Valor ICMS'].sum().reset_index(name='ICMS Crédito')
-debitos = saidas.groupby(saidas['Mês'].dt.to_period('M'))['Valor ICMS'].sum().reset_index(name='ICMS Débito')
-comparativo = pd.merge(creditos, debitos, on='Mês', how='outer').fillna(0).sort_values(by='Mês')
-comparativo['Crédito Acumulado'] = 0.0
-comparativo['ICMS Apurado Corrigido'] = 0.0
-
-credito_acumulado = 0
-for i, row in comparativo.iterrows():
-    credito_total = row['ICMS Crédito'] + credito_acumulado
-    apurado = row['ICMS Débito'] - credito_total
-    comparativo.at[i, 'Crédito Acumulado'] = credito_acumulado
-    comparativo.at[i, 'ICMS Apurado Corrigido'] = apurado
-    credito_acumulado = max(0, -apurado)
-
-comparativo['Mês'] = comparativo['Mês'].astype(str)
-comparativo_filtrado = comparativo[comparativo['Mês'].apply(lambda x: int(x[5:7]) in meses_filtrados)]
-
-# ========== MAPA DE CORES ==========
+# ========== MAPAS DE CORES ==========
 ufs = sorted(set(entradas['UF do Emitente'].dropna().unique().tolist() + saidas['UF do Destinatário'].dropna().unique().tolist()))
 palette = pc.qualitative.Alphabet
 uf_cores = {uf: palette[i % len(palette)] for i, uf in enumerate(ufs)}
@@ -72,102 +64,41 @@ aliq_cores = {
     0: '#636EFA', 4: '#EF553B', 7: '#00CC96', 12: '#AB63FA', 19: '#FFA15A'
 }
 
-# ========== GRÁFICOS ==========
-if filtro_grafico == "Mapa por UF":
-    st.subheader("📍 Mapa de Apuração por UF")
-    col1, col2 = st.columns(2)
-    with col1:
-        uf_compras = entradas_filtradas.groupby('UF do Emitente')['Valor Total'].sum().reset_index()
-        fig = px.bar(uf_compras, x='UF do Emitente', y='Valor Total', text_auto='.2s')
-        st.plotly_chart(fig, use_container_width=True)
+# ========== NOVA ABA: CONTABILIDADE E CAIXA ==========
+if filtro_aba == "Contabilidade e Caixa":
+    st.header("📘 Contabilidade e Caixa")
 
-        fig_pie = px.pie(uf_compras, names='UF do Emitente', values='Valor Total',
-                         color='UF do Emitente', color_discrete_map=uf_cores, hole=0.3)
-        fig_pie.update_traces(textinfo='label+value')
-        st.plotly_chart(fig_pie, use_container_width=True)
+    caixa_filtrada = caixa[caixa['Data'].dt.month.isin(meses_filtrados)]
 
-    with col2:
-        uf_vendas = saidas_filtradas.groupby('UF do Destinatário')['Valor Total'].sum().reset_index()
-        fig = px.bar(uf_vendas, x='UF do Destinatário', y='Valor Total', text_auto='.2s')
-        st.plotly_chart(fig, use_container_width=True)
+    receita_total = caixa_filtrada[caixa_filtrada['Tipo'] == 'Saída']['Valor'].sum()
+    despesa_total = caixa_filtrada[caixa_filtrada['Tipo'] == 'Entrada']['Valor'].sum()
+    saldo_final = receita_total - despesa_total
+    margem_lucro = (saldo_final / receita_total) * 100 if receita_total > 0 else 0
 
-        fig_pie2 = px.pie(uf_vendas, names='UF do Destinatário', values='Valor Total',
-                          color='UF do Destinatário', color_discrete_map=uf_cores, hole=0.3)
-        fig_pie2.update_traces(textinfo='label+value')
-        st.plotly_chart(fig_pie2, use_container_width=True)
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("💵 Receita Total", f"R$ {receita_total:,.2f}")
+    col2.metric("📤 Despesas Totais", f"R$ {despesa_total:,.2f}")
+    col3.metric("📌 Saldo Final", f"R$ {saldo_final:,.2f}")
+    col4.metric("📈 Margem de Lucro", f"{margem_lucro:.2f}%")
 
-elif filtro_grafico == "Comparativo de Crédito x Débito":
-    st.subheader("📊 Comparativo de Crédito x Débito")
-    df_bar = comparativo_filtrado.melt(id_vars='Mês', value_vars=['ICMS Crédito', 'ICMS Débito'])
-    fig_bar = px.bar(df_bar, x='Mês', y='value', color='variable', barmode='group', text_auto='.2s')
-    st.plotly_chart(fig_bar, use_container_width=True)
+    st.subheader("📊 Gráfico Receitas vs Despesas")
+    graf_df = caixa_filtrada.copy()
+    graf_df['Mês'] = graf_df['Data'].dt.to_period('M')
+    graf_df_group = graf_df.groupby(['Mês', 'Tipo'])['Valor'].sum().reset_index()
+    fig1 = px.bar(graf_df_group, x='Mês', y='Valor', color='Tipo', barmode='group', text_auto='.2s')
+    st.plotly_chart(fig1, use_container_width=True)
 
-    st.subheader("📊 Comparativo por Alíquota")
-    df_aliq = entradas_filtradas.copy()
-    df_aliq['Aliquota'] = (df_aliq['Alíquota ICMS'] * 100).round(0).astype(int)
-    df_aliq['Crédito ICMS Estimado'] = df_aliq['Valor ICMS']
+    st.subheader("📈 Evolução do Saldo Acumulado")
+    caixa_filtrada = caixa_filtrada.sort_values('Data')
+    caixa_filtrada['Saldo'] = caixa_filtrada.apply(lambda row: row['Valor'] if row['Tipo'] == 'Saída' else -row['Valor'], axis=1).cumsum()
+    fig2 = px.line(caixa_filtrada, x='Data', y='Saldo', title='Evolução do Saldo Acumulado')
+    st.plotly_chart(fig2, use_container_width=True)
 
-    df_saida = saidas_filtradas.copy()
-    df_saida['Aliquota'] = (df_saida['Alíquota ICMS'] * 100).round(0).astype(int)
+    st.subheader("📉 Despesas por Categoria")
+    categoria_pizza = caixa_filtrada[caixa_filtrada['Tipo'] == 'Entrada'].groupby('Categoria')['Valor'].sum().reset_index()
+    fig3 = px.pie(categoria_pizza, names='Categoria', values='Valor', title='Distribuição das Despesas por Categoria')
+    fig3.update_traces(textinfo='label+percent')
+    st.plotly_chart(fig3, use_container_width=True)
 
-    total_compras = df_aliq.groupby('Aliquota').agg({'Valor Total': 'sum', 'Crédito ICMS Estimado': 'sum'}).reset_index()
-    total_debitos = df_saida.groupby('Aliquota')['Valor ICMS'].sum().reset_index(name='Débito ICMS')
-    df_final = pd.merge(total_compras, total_debitos, on='Aliquota', how='outer').fillna(0)
-
-    df_dual = df_final.melt(id_vars='Aliquota', value_vars=['Valor Total', 'Crédito ICMS Estimado', 'Débito ICMS'],
-                            var_name='Tipo', value_name='Valor')
-    fig_aliq_bar = px.bar(df_dual, x='Aliquota', y='Valor', color='Tipo', barmode='group', text_auto='.2s')
-    fig_aliq_bar.update_layout(xaxis=dict(tickmode='array', tickvals=[0, 4, 7, 12, 19]))
-    st.plotly_chart(fig_aliq_bar, use_container_width=True)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        fig_credito = px.pie(df_final, names='Aliquota', values='Crédito ICMS Estimado',
-                             color='Aliquota', color_discrete_map=aliq_cores, hole=0.3)
-        fig_credito.update_traces(textinfo='label+value')
-        st.plotly_chart(fig_credito, use_container_width=True)
-    with col2:
-        fig_debito = px.pie(df_final, names='Aliquota', values='Débito ICMS',
-                            color='Aliquota', color_discrete_map=aliq_cores, hole=0.3)
-        fig_debito.update_traces(textinfo='label+value')
-        st.plotly_chart(fig_debito, use_container_width=True)
-
-elif filtro_grafico == "Apuração com Crédito Acumulado":
-    st.subheader("📄 Apuração com Crédito Acumulado")
-    st.dataframe(comparativo_filtrado.style.format({
-        'ICMS Crédito': 'R$ {:,.2f}',
-        'ICMS Débito': 'R$ {:,.2f}',
-        'Crédito Acumulado': 'R$ {:,.2f}',
-        'ICMS Apurado Corrigido': 'R$ {:,.2f}'
-    }), use_container_width=True)
-
-elif filtro_grafico == "Relatórios Detalhados":
-    st.subheader("📄 Relatórios Detalhados e Download de Tabelas")
-
-    st.subheader("📥 Entradas Filtradas")
-    st.dataframe(entradas_filtradas, use_container_width=True)
-
-    st.subheader("📤 Saídas Filtradas")
-    st.dataframe(saidas_filtradas, use_container_width=True)
-
-    st.subheader("📊 Apuração com Crédito Acumulado")
-    st.dataframe(comparativo_filtrado.style.format({
-        'ICMS Crédito': 'R$ {:,.2f}',
-        'ICMS Débito': 'R$ {:,.2f}',
-        'Crédito Acumulado': 'R$ {:,.2f}',
-        'ICMS Apurado Corrigido': 'R$ {:,.2f}'
-    }), use_container_width=True)
-
-    def to_excel():
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            entradas_filtradas.to_excel(writer, sheet_name="Entradas", index=False)
-            saidas_filtradas.to_excel(writer, sheet_name="Saídas", index=False)
-            comparativo_filtrado.to_excel(writer, sheet_name="Apuracao", index=False)
-        return output.getvalue()
-
-    excel_bytes = to_excel()
-    st.download_button("⬇️ Baixar Relatórios Completos (.xlsx)",
-                       data=excel_bytes,
-                       file_name="Relatorio_ICMS_Completo.xlsx",
-                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    st.subheader("🧾 Tabela Completa com Filtros")
+    st.dataframe(caixa_filtrada[['Data', 'Categoria', 'Tipo', 'Valor']], use_container_width=True)
