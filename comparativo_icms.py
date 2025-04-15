@@ -188,119 +188,32 @@ elif filtro_grafico == "Relatórios Detalhados":
 
 elif filtro_grafico == "📘 Contabilidade e Caixa":
     st.subheader("📘 Contabilidade e Caixa")
+    # Gráfico de barras Receitas (entradas) vs Despesas (saídas) por mês.
+    # Linha do saldo acumulado.
+    # Gráfico de pizza de gastos por categoria.
+    # Tabela detalhada com filtro por tipo.
+    # Cards de resumo: receita total, despesa total, saldo final, margem.
+    st.write("Em construção: Gráfico de barras Receitas vs Despesas, Saldo Acumulado, Gráfico de Pizza de Gastos, Tabela Detalhada, Cards de Resumo.")
 
-    # Conversão de data e extração do mês/ano
-    caixa_df['Data'] = pd.to_datetime(caixa_df['Data'], errors='coerce')
-    caixa_df = caixa_df.dropna(subset=['Data', 'Tipo', 'Valor'])
-    caixa_df['Valor'] = pd.to_numeric(caixa_df['Valor'], errors='coerce').fillna(0)
-    caixa_df['Mês'] = caixa_df['Data'].dt.strftime('%b/%Y')
+elif filtro_grafico == "📗 PIS":
+    st.subheader("📗 PIS")
+    # Gráfico colunas: crédito PIS x débito.
+    # Tabela com créditos a transportar.
+    # Card com total recolhido, total creditado, saldo a transportar.
+    st.write("Em construção: Gráfico de Crédito x Débito, Tabela de Créditos a Transportar, Card de Saldo.")
 
-    # ========== CARDS RESUMO ==========
-    total_receitas = caixa_df[caixa_df['Tipo'].str.lower() == 'entrada']['Valor'].sum()
-    total_despesas = caixa_df[caixa_df['Tipo'].str.lower() == 'saida']['Valor'].sum()
-    saldo = total_receitas - total_despesas
-    margem = (saldo / total_receitas) * 100 if total_receitas > 0 else 0
+elif filtro_grafico == "📙 COFINS":
+    st.subheader("📙 COFINS")
+    # Mesma lógica do PIS, porém com dados da aba COFINS.
+    st.write("Em construção: Gráfico de Crédito x Débito, Tabela de Créditos a Transportar, Card de Saldo.")
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Receitas Totais", f"R$ {total_receitas:,.2f}")
-    col2.metric("Despesas Totais", f"R$ {total_despesas:,.2f}")
-    col3.metric("Saldo Final", f"R$ {saldo:,.2f}")
-    col4.metric("Margem (%)", f"{margem:.2f}%")
-
-    # ========== GRÁFICO BARRAS RECEITA x DESPESAS ==========
-    graf_df = caixa_df.groupby(['Mês', 'Tipo'])['Valor'].sum().reset_index()
-    fig_bar = px.bar(graf_df, x='Mês', y='Valor', color='Tipo', barmode='group',
-                    title='Comparativo de Entradas e Saídas por Mês')
-    st.plotly_chart(fig_bar, use_container_width=True)
-
-    # ========== SALDO ACUMULADO ==========
-    caixa_df = caixa_df.sort_values(by='Data')
-    caixa_df['Saldo Acumulado'] = caixa_df.apply(
-        lambda row: row['Valor'] if row['Tipo'].lower() == 'entrada' else -row['Valor'], axis=1
-    ).cumsum()
-    fig_saldo = px.line(caixa_df, x='Data', y='Saldo Acumulado', title='Saldo Acumulado ao Longo do Tempo')
-    st.plotly_chart(fig_saldo, use_container_width=True)
-
-    # ========== GRÁFICO PIZZA CATEGORIAS ==========
-    if 'Categoria' in caixa_df.columns:
-        categoria_df = caixa_df[caixa_df['Tipo'].str.lower() == 'saida'].groupby('Categoria')['Valor'].sum().reset_index()
-        fig_pizza = px.pie(categoria_df, names='Categoria', values='Valor', title='Distribuição das Despesas por Categoria', hole=0.3)
-        fig_pizza.update_traces(textinfo='label+percent')
-        st.plotly_chart(fig_pizza, use_container_width=True)
-
-    # ========== TABELA DETALHADA ==========
-    st.write("\n### 📜 Tabela Detalhada de Caixa")
-    st.dataframe(caixa_df, use_container_width=True)
-
-
-# ========== 2. PIS e COFINS ==========
-
-# Objetivo: Apurar e exibir os gráficos de crédito e débito do PIS/COFINS e mostrar créditos a transportar
-# Justificativa: As seções estavam com texto fixo sem processar os dados lidos
-
-for tributo, df in zip(["PIS", "COFINS"], [pis_df, cofins_df]):
-    if filtro_grafico == f"📗 {tributo}":
-        st.subheader(f"📗 Apuração de {tributo}")
-
-        df['Mês'] = pd.to_datetime(df['Mês'], errors='coerce')
-        df['Mês Ref'] = df['Mês'].dt.strftime('%b/%Y')
-
-        df['Crédito'] = pd.to_numeric(df['Crédito'], errors='coerce').fillna(0)
-        df['Débito'] = pd.to_numeric(df['Débito'], errors='coerce').fillna(0)
-        df['A Transportar'] = pd.to_numeric(df['A Transportar'], errors='coerce').fillna(0)
-
-        # Cards
-        total_cred = df['Crédito'].sum()
-        total_deb = df['Débito'].sum()
-        total_transp = df['A Transportar'].sum()
-
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Total de Créditos", f"R$ {total_cred:,.2f}")
-        c2.metric("Total de Débitos", f"R$ {total_deb:,.2f}")
-        c3.metric("Créditos a Transportar", f"R$ {total_transp:,.2f}")
-
-        # Gráfico
-        graf = df[['Mês Ref', 'Crédito', 'Débito']].melt(id_vars='Mês Ref', var_name='Tipo', value_name='Valor')
-        fig = px.bar(graf, x='Mês Ref', y='Valor', color='Tipo', barmode='group', title=f'{tributo} - Crédito x Débito')
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.write("### 📊 Detalhamento dos Créditos a Transportar")
-        st.dataframe(df[['Mês Ref', 'A Transportar']], use_container_width=True)
-
-
-# ========== 3. DRE ==========
-
-# Objetivo: Apresentar o resultado gerencial do período e destacar prejuízos
-# Justificativa: A seção estava com texto placeholder, sem exibir os dados da aba "DRE 1º Trimestre"
-
-if filtro_grafico == "📘 DRE Trimestral":
-    st.subheader("📘 Demonstração do Resultado do Exercício")
-    dre_df.columns = dre_df.columns.str.strip()
-
-    if 'Valor' in dre_df.columns:
-        dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
-
-        # DRE formatada
-        st.dataframe(dre_df, use_container_width=True)
-
-        # Destacar prejuízo
-        resultado = dre_df[dre_df['Conta'].str.contains("Resultado Líquido", case=False)]['Valor'].sum()
-        if resultado < 0:
-            st.error(f"❌ Prejuízo apurado no período: R$ {abs(resultado):,.2f}")
-        else:
-            st.success(f"✅ Lucro apurado no período: R$ {resultado:,.2f}")
-
-        # Gráfico barras Receita vs Resultado
-        grupo = dre_df[dre_df['Conta'].str.contains("Receita|Resultado", case=False)]
-        fig_dre = px.bar(grupo, x='Conta', y='Valor', title="Receita vs Resultado Líquido")
-        st.plotly_chart(fig_dre, use_container_width=True)
-
-        # Gráfico de pizza de despesas (se houver)
-        despesas = dre_df[dre_df['Conta'].str.contains("Despesa", case=False)]
-        if not despesas.empty:
-            fig_pizza_desp = px.pie(despesas, names='Conta', values='Valor', title="Composição das Despesas", hole=0.3)
-            fig_pizza_desp.update_traces(textinfo='label+percent')
-            st.plotly_chart(fig_pizza_desp, use_container_width=True)
+elif filtro_grafico == "📘 DRE Trimestral":
+    st.subheader("📘 DRE Trimestral")
+    # DRE formatada com estilo.
+    # Gráfico de barras: receita vs lucro líquido.
+    # Gráfico de pizza com participação de despesas no resultado.
+    # Destaque de prejuízo no trimestre.
+    st.write("Em construção: DRE Formatada, Gráfico de Receita vs Lucro Líquido, Gráfico de Pizza de Despesas, Destaque de Prejuízo.")
 
 # Função para gerar Excel
 def to_excel():
