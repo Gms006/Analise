@@ -140,12 +140,12 @@ elif filtro_grafico == "Relatórios Detalhados":
     st.subheader("📄 Relatórios Detalhados e Download de Tabelas")
 
     # Exibir Entradas
-    st.write("### 📥 Entradas Filtradas")
-    st.dataframe(entradas_filtradas.fillna(''), use_container_width=True)
+    st.subheader("📥 Entradas Filtradas")
+    st.dataframe(entradas_filtradas.copy().fillna(''), use_container_width=True)
 
     # Exibir Saídas
-    st.write("### 📤 Saídas Filtradas")
-    st.dataframe(saidas_filtradas.fillna(''), use_container_width=True)
+    st.subheader("📤 Saídas Filtradas")
+    st.dataframe(saidas_filtradas.copy().fillna(''), use_container_width=True)
 
     # Exibir Apuração com crédito acumulado
     st.write("### 📊 Comparativo de Crédito x Débito com Crédito Acumulado")
