@@ -7,7 +7,7 @@ from io import BytesIO
 # ========== CONFIGURAÇÕES ==========
 st.set_page_config(layout="wide")
 st.title("📊 Relatório Interativo de ICMS")
-caminho_planilha = r"C:\projeto\ICMS\notas_processadas1.xlsx"
+caminho_planilha = "notas_processadas1.xlsx"
 
 # ========== LEITURA ==========
 entradas = pd.read_excel(caminho_planilha, sheet_name="Todas Entradas", skiprows=1)
