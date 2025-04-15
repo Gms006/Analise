@@ -10,7 +10,12 @@ st.title("📊 Relatório Interativo de ICMS")
 caminho_planilha = "notas_processadas1.xlsx"
 
 # ========== LEITURA ==========
+# LEITURA COM TRATAMENTO DE COLUNAS INVÁLIDAS
 entradas = pd.read_excel(caminho_planilha, sheet_name="Todas Entradas", skiprows=1)
+entradas = entradas.loc[:, ~entradas.columns.to_series().isna()]  # Remove colunas sem nome
+entradas.columns = [str(col).strip() for col in entradas.columns]  # Remove espaços em branco nos nomes das colunas
+entradas = entradas.loc[:, ~entradas.columns.str.contains("Unnamed|^\\d+$", na=False)]  # Remove colunas "Unnamed" ou com nomes numéricos
+
 saidas = pd.read_excel(caminho_planilha, sheet_name="Todas Saídas")
 
 # LIMPEZA E FORMATOS
@@ -169,6 +174,9 @@ elif filtro_grafico == "Relatórios Detalhados":
     # Botão para baixar o Excel completo
     excel_bytes = to_excel()
     st.download_button("⬇️ Baixar Relatórios Completos (.xlsx)",
+                       data=excel_bytes,
+                       file_name="Relatorio_ICMS_Completo.xlsx",
+                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                        data=excel_bytes,
                        file_name="Relatorio_ICMS_Completo.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
