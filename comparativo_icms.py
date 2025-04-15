@@ -45,8 +45,8 @@ filtro_grafico = st.sidebar.selectbox("Tipo de gráfico:", [
     "Relatórios Detalhados"
 ])
 meses_filtrados = periodos[filtro_periodo]
-entradas_filtradas = entradas[entradas['Mês'].dt.month.isin(meses_filtrados)].fillna('')
-saidas_filtradas = saidas[saidas['Mês'].dt.month.isin(meses_filtrados)].fillna('')
+entradas_filtradas = entradas[entradas['Mês'].dt.month.isin(meses_filtrados)]
+saidas_filtradas = saidas[saidas['Mês'].dt.month.isin(meses_filtrados)]
 
 # ========== DEMONSTRATIVO DO PERÍODO FILTRADO ==========
 creditos = entradas.groupby(entradas['Mês'].dt.to_period('M'))['Valor ICMS'].sum().reset_index(name='ICMS Crédito')
@@ -174,9 +174,6 @@ elif filtro_grafico == "Relatórios Detalhados":
     # Botão para baixar o Excel completo
     excel_bytes = to_excel()
     st.download_button("⬇️ Baixar Relatórios Completos (.xlsx)",
-                       data=excel_bytes,
-                       file_name="Relatorio_ICMS_Completo.xlsx",
-                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                        data=excel_bytes,
                        file_name="Relatorio_ICMS_Completo.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
