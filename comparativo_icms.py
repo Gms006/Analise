@@ -266,7 +266,6 @@ aliq_cores = {0: '#636EFA', 4: '#EF553B', 7: '#00CC96', 12: '#AB63FA', 19: '#FFA
 # =========================
 # =========================
 # 11. GRÁFICOS E RELATÓRIOS
-# =========================
 # === CATEGORIAS DE RELATÓRIOS ===
 aba = st.sidebar.radio(
     "📁 Tipo de Relatório:",
@@ -488,24 +487,19 @@ elif filtro_grafico == "📘 DRE Trimestral":
     def get_dre_val(desc):
         row = dre_df[dre_df['Descrição'].str.strip().str.upper() == desc.strip().upper()]
         if not row.empty:
-            val = row['Saldo'].values[0]
-            try:
-                return float(str(val).replace("R$", "").replace(".", "").replace(",", "."))
-            except Exception:
-                return 0.0
-        return 0.0
-
-    receita_bruta = get_dre_val("VENDA DE MERCADORIAS A VISTA")
-    def get_dre_val(desc):
-        row = dre_df[dre_df['Descrição'].str.strip().str.upper() == desc.strip().upper()]
-        if not row.empty:
-            val = row['Saldo'].values[0]
-            try:
-                numeric_value = float(str(val).replace("R$", "").replace(".", "").replace(",", "."))
-                return f"{numeric_value:,.2f}".replace(",", "*").replace(".", ",").replace("*", ".")
-            except Exception:
-                return "0,00"
-        return "0,00"
+            val = str(row['Saldo'].values[0])
+            val = val.replace("R$", "").replace(" ", "")
+            # Corrige para float (remove pontos só se houver vírgula)
+            if "," in val:
+                val_float = float(val.replace(".", "").replace(",", "."))
+            else:
+                try:
+                    val_float = float(val)
+                except Exception:
+                    val_float = 0.0
+            # Formata para moeda brasileira
+            return f"R$ {val_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return "R$ 0,00"
 
     receita_bruta = get_dre_val("VENDA DE MERCADORIAS A VISTA")
     deducoes = get_dre_val("(-) Deduções das Receitas Operacionais")
