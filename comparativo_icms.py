@@ -259,19 +259,16 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
         )
         st.plotly_chart(fig_saldo, use_container_width=True)
     else:
-        # Evolução mensal do saldo acumulado levando em conta o saldo anterior real da planilha
+        # Se existe a coluna 'Saldo', apenas exibe o saldo real do último dia de cada mês selecionado
         if 'Saldo' in caixa_ordenado.columns:
-            # Corrigir evolução mensal real com base no saldo final verdadeiro
             caixa_saldo_real = caixa_ordenado[['Data', 'Mês', 'Saldo']].copy()
             caixa_saldo_real = caixa_saldo_real.dropna(subset=['Saldo'])
-            caixa_saldo_real['Mês Nome'] = caixa_saldo_real['Mês'].map({1:'Janeiro', 2:'Fevereiro', 3:'Março'})
-
-            # Ordena por data e seleciona o último saldo real de cada mês
+            caixa_saldo_real['Mês Nome'] = caixa_saldo_real['Mês'].map({1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'})
             caixa_saldo_real = caixa_saldo_real.sort_values('Data')
             caixa_saldo_real = caixa_saldo_real[caixa_saldo_real['Mês'].isin(meses_selecionados)]
+            # Pega apenas o último saldo de cada mês (último registro do mês)
             caixa_saldo_final_mes = caixa_saldo_real.groupby('Mês').tail(1)
 
-            # Gera o gráfico com os saldos finais reais
             fig_saldo = px.line(
                 caixa_saldo_final_mes, x='Mês Nome', y='Saldo',
                 title='Evolução Mensal do Saldo Acumulado - Caixa',
@@ -286,7 +283,7 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
                 'Valor Líquido': 'sum'
             }).reset_index().sort_values('Mês')
             caixa_resumo['Saldo Acumulado'] = caixa_resumo['Valor Líquido'].cumsum()
-            nomes_meses = {1:'Janeiro', 2:'Fevereiro', 3:'Março'}
+            nomes_meses = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'}
             caixa_resumo['Mês Nome'] = caixa_resumo['Mês'].map(nomes_meses)
             fig_saldo = px.line(
                 caixa_resumo, x='Mês Nome', y='Saldo Acumulado',
@@ -300,7 +297,7 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
             'Entradas': 'sum',
             'Saídas': 'sum'
         }).reset_index()
-        nomes_meses = {1:'Janeiro', 2:'Fevereiro', 3:'Março'}
+        nomes_meses = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'}
         caixa_resumo['Mês Nome'] = caixa_resumo['Mês'].map(nomes_meses)
         fig = px.bar(caixa_resumo, x='Mês Nome', y=['Entradas', 'Saídas'], barmode='group',
                      title="Entradas vs Saídas Mensais")
