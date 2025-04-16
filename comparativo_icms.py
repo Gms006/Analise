@@ -229,13 +229,14 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
 
     # Gráficos e análises
     if len(meses_selecionados) == 1:
-        # Evolução de 10 em 10 dias do saldo acumulado no mês selecionado
-        caixa_mes = caixa_ordenado[caixa_ordenado['Mês'] == meses_selecionados[0]].copy()
-        if 'Saldo' in caixa_mes.columns:
-            saldo_inicial = caixa_mes['Saldo'].iloc[0]
+        # Determina o saldo final do mês anterior como ponto de partida
+        if 'Saldo' in caixa_ordenado.columns:
+            mes_atual = meses_selecionados[0]
+            saldo_anterior = caixa_ordenado[caixa_ordenado['Mês'] < mes_atual]['Saldo'].iloc[-1] if not caixa_ordenado[caixa_ordenado['Mês'] < mes_atual].empty else 0
         else:
-            saldo_inicial = 0
+            saldo_anterior = 0
 
+        caixa_mes = caixa_ordenado[caixa_ordenado['Mês'] == meses_selecionados[0]].copy()
         caixa_mes['Dia'] = caixa_mes['Data'].dt.day
         caixa_mes['Decêndio'] = ((caixa_mes['Dia'] - 1) // 10 + 1).clip(upper=3)
         caixa_decendio = caixa_mes.groupby('Decêndio').agg({
@@ -244,8 +245,8 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
             'Valor Líquido': 'sum'
         }).reset_index()
         caixa_decendio['Período'] = caixa_decendio['Decêndio'].map({1: '1-10', 2: '11-20', 3: '21-31'})
-        # Correção: saldo acumulado parte do saldo inicial e soma os decêndios
-        caixa_decendio['Saldo Acumulado'] = saldo_inicial + caixa_decendio['Valor Líquido'].cumsum()
+        # Evolução do saldo acumulado por decêndio com base no saldo anterior real
+        caixa_decendio['Saldo Acumulado'] = saldo_anterior + caixa_decendio['Valor Líquido'].cumsum()
 
         fig = px.bar(caixa_decendio, x='Período', y=['Entradas', 'Saídas'], barmode='group',
                      title="Entradas vs Saídas por Período (10 em 10 dias)")
