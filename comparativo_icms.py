@@ -71,11 +71,11 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
     for mes in meses_selecionados:
         df_mes = df[df['Mês'] == mes]
         if df_mes.empty:
-            continue  # pula mês sem dados
+            continue
 
         ano = df_mes['Ano'].dropna().iloc[0] if not df_mes['Ano'].dropna().empty else None
         if ano is None:
-            continue  # pula se não encontrar ano válido
+            continue
 
         try:
             data_limite = pd.Timestamp(f"{int(ano)}-{mes:02d}-01")
@@ -84,37 +84,29 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
             continue
 
         df_ant = df[df['Data'] < data_limite]
+        saldo_ant = df_ant['Valor Líquido'].sum() if not df_ant.empty else 0
 
-        if not df_ant.empty:
-            saldo_ant = df_ant['Valor Líquido'].sum()
-            data_ant = df_ant['Data'].iloc[-1]
+        if len(meses_selecionados) > 1:
+            # TRIMESTRE: Apenas saldo final do mês
+            saldo_fim = df_mes['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
+            data_fim = df_mes['Data'].iloc[-1]
+            pontos.append({'Data': data_fim, 'Saldo Acumulado': saldo_fim, 'Mês': mes})
         else:
-            saldo_ant = 0
-            data_ant = data_limite - pd.Timedelta(days=1)
+            # MENSAL: Saldo anterior, saldo do dia 15, saldo final
+            data_ant = df_ant['Data'].iloc[-1] if not df_ant.empty else (data_limite - pd.Timedelta(days=1))
+            pontos.append({'Data': data_ant, 'Saldo Acumulado': saldo_ant, 'Mês': mes})
 
-        pontos.append({'Data': data_ant, 'Saldo Acumulado': saldo_ant, 'Mês': mes})
+            data_15 = pd.Timestamp(f"{int(ano)}-{mes:02d}-15")
+            df_mes_15 = df_mes[df_mes['Data'] <= data_15]
+            if not df_mes_15.empty:
+                saldo_15 = df_mes_15['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
+                pontos.append({'Data': data_15, 'Saldo Acumulado': saldo_15, 'Mês': mes})
 
-        # Saldo no dia 15 do mês
-        data_15 = pd.Timestamp(f"{int(ano)}-{mes:02d}-15")
-        df_mes_15 = df_mes[df_mes['Data'] <= data_15]
-        if not df_mes_15.empty:
-            saldo_15 = df_mes_15['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
-            pontos.append({'Data': data_15, 'Saldo Acumulado': saldo_15, 'Mês': mes})
-
-        # Saldo final do mês
-        saldo_fim = df_mes['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
-        data_fim = df_mes['Data'].iloc[-1]
-        pontos.append({'Data': data_fim, 'Saldo Acumulado': saldo_fim, 'Mês': mes})
+            saldo_fim = df_mes['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
+            data_fim = df_mes['Data'].iloc[-1]
+            pontos.append({'Data': data_fim, 'Saldo Acumulado': saldo_fim, 'Mês': mes})
 
     df_pontos = pd.DataFrame(pontos)
-    df_pontos['Data'] = pd.to_datetime(df_pontos['Data'], errors='coerce')
-    df_pontos['Mês'] = df_pontos['Data'].dt.month
-
-    if len(meses_selecionados) > 1:
-        # Seleciona o último ponto de cada mês com base na maior data
-        df_pontos = df_pontos.sort_values('Data')
-        df_pontos = df_pontos.loc[df_pontos.groupby('Mês')['Data'].idxmax()]
-    
     fig = px.line(df_pontos, x="Data", y="Saldo Acumulado", markers=True, title="Evolução Decacional do Saldo Acumulado - Caixa")
     st.plotly_chart(fig, use_container_width=True)
 
