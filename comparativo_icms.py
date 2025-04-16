@@ -47,15 +47,24 @@ periodos = {
     "1º Trimestre/2025": [1, 2, 3]
 }
 filtro_periodo = st.sidebar.selectbox("Selecione o período:", list(periodos.keys()))
-filtro_grafico = st.sidebar.selectbox("Tipo de gráfico:", [
-    "Mapa por UF",
-    "Comparativo de Crédito x Débito",
-    "Apuração com Crédito Acumulado",
-    "Relatórios Detalhados",
-    "📘 Contabilidade e Caixa",
-    "📗 PIS e COFINS",  # <-- renomeado aqui
-    "📘 DRE Trimestral"
-])
+
+# Separação Fiscal x Contabilidade
+aba = st.sidebar.radio("Selecione a área:", ["Fiscal", "Contabilidade"])
+
+if aba == "Fiscal":
+    filtro_grafico = st.sidebar.selectbox("Tipo de gráfico Fiscal:", [
+        "Mapa por UF",
+        "Comparativo de Crédito x Débito",
+        "Apuração com Crédito Acumulado",
+        "Relatórios Detalhados",
+    ])
+else:
+    filtro_grafico = st.sidebar.selectbox("Tipo de gráfico Contabilidade:", [
+        "📘 Contabilidade e Caixa",
+        "📗 PIS e COFINS",
+        "📘 DRE Trimestral"
+    ])
+
 meses_filtrados = periodos[filtro_periodo]
 entradas_filtradas = entradas[entradas['Mês'].dt.month.isin(meses_filtrados)]
 saidas_filtradas = saidas[saidas['Mês'].dt.month.isin(meses_filtrados)]
@@ -190,23 +199,24 @@ elif filtro_grafico == "Relatórios Detalhados":
 elif filtro_grafico == "📘 Contabilidade e Caixa":
     st.subheader("📘 Contabilidade e Caixa")
 
+    # Tratamento das colunas para garantir sinal correto
+    caixa_df['Entradas'] = pd.to_numeric(caixa_df['Entradas'], errors='coerce').fillna(0)
+    caixa_df['Saídas'] = pd.to_numeric(caixa_df['Saídas'], errors='coerce').fillna(0)
+    caixa_df['Entrada'] = caixa_df['Entradas']
+    caixa_df['Saída'] = -caixa_df['Saídas']  # saídas negativas explicitamente
+    caixa_df['Valor Líquido'] = caixa_df['Entrada'] + caixa_df['Saída']
+
     caixa_df['Data'] = pd.to_datetime(caixa_df['Data'], errors='coerce')
     caixa_df['Mês'] = caixa_df['Data'].dt.month
     caixa_df['Ano'] = caixa_df['Data'].dt.year
 
-    caixa_df['Entradas'] = pd.to_numeric(caixa_df['Entradas'], errors='coerce').fillna(0)
-    caixa_df['Saídas'] = pd.to_numeric(caixa_df['Saídas'], errors='coerce').fillna(0)
-    caixa_df['Valor Líquido'] = caixa_df['Entradas'] - caixa_df['Saídas']
-
-    periodos = {
-        "Janeiro/2025": [1],
-        "Fevereiro/2025": [2],
-        "Março/2025": [3],
-        "1º Trimestre/2025": [1, 2, 3]
-    }
-
     meses_selecionados = periodos[filtro_periodo]
     caixa_filtrado = caixa_df[caixa_df['Mês'].isin(meses_selecionados)]
+
+    # Tabela detalhada PRIMEIRO
+    st.subheader("🗃️ Tabela Detalhada de Caixa")
+    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entradas', 'Saídas', 'Valor Líquido']],
+                 use_container_width=True)
 
     caixa_resumo = caixa_filtrado.groupby('Mês').agg({
         'Entradas': 'sum',
@@ -222,8 +232,11 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
                  title="Entradas vs Saídas Mensais")
     st.plotly_chart(fig, use_container_width=True)
 
-    fig_saldo = px.line(caixa_resumo, x='Mês', y='Saldo Acumulado',
-                        title='Saldo Acumulado Mensal')
+    fig_saldo = px.line(
+        caixa_resumo, x='Mês', y='Saldo Acumulado',
+        title='Evolução Mensal do Saldo Acumulado - Caixa',
+        markers=True
+    )
     st.plotly_chart(fig_saldo, use_container_width=True)
 
     if 'Descricao' in caixa_filtrado.columns:
@@ -243,38 +256,38 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
     col4.metric("📌 Margem (%)", f"{margem:.2f}%")
 
-    st.subheader("🗃️ Tabela Detalhada de Caixa")
-    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entradas', 'Saídas', 'Valor Líquido']],
-                 use_container_width=True)
-
 elif filtro_grafico == "📗 PIS e COFINS":
     st.subheader("📗 Apuração PIS e COFINS")
 
-    # Garantindo tipos corretos e limpeza de dados
-    piscofins_df['Crédito'] = pd.to_numeric(piscofins_df['Crédito'], errors='coerce').fillna(0)
-    piscofins_df['Débito'] = pd.to_numeric(piscofins_df['Débito'], errors='coerce').fillna(0)
-    piscofins_df['Saldo'] = piscofins_df['Crédito'] - piscofins_df['Débito']
-
-    # Filtragem dinâmica dos períodos
+    # Ordenação correta dos meses
+    ordem_meses = {"Janeiro": 1, "Fevereiro": 2, "Março": 3}
     meses_filtro = {
         "Janeiro/2025": ["Janeiro"],
         "Fevereiro/2025": ["Fevereiro"],
         "Março/2025": ["Março"],
         "1º Trimestre/2025": ["Janeiro", "Fevereiro", "Março"]
     }
-
     meses_selecionados = meses_filtro[filtro_periodo]
     piscofins_filtrado = piscofins_df[piscofins_df['Mês'].isin(meses_selecionados)]
+    piscofins_filtrado = piscofins_filtrado.sort_values(by="Mês", key=lambda x: x.map(ordem_meses))
+
+    # Tabela detalhada PRIMEIRO
+    st.subheader("📋 Tabela Detalhada PIS e COFINS")
+    st.dataframe(piscofins_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
+                 use_container_width=True)
 
     # Gráfico de barras Créditos vs Débitos
     fig_pis = px.bar(piscofins_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
                      title='Créditos vs Débitos PIS e COFINS')
     st.plotly_chart(fig_pis, use_container_width=True)
 
-    # Gráfico de linha do Saldo acumulado
+    # Gráfico de linha do Saldo acumulado (mensal)
     piscofins_filtrado['Saldo Acumulado'] = piscofins_filtrado['Saldo'].cumsum()
-    fig_saldo_pis = px.line(piscofins_filtrado, x='Mês', y='Saldo Acumulado',
-                            title='Saldo Acumulado PIS e COFINS')
+    fig_saldo_pis = px.line(
+        piscofins_filtrado, x='Mês', y='Saldo Acumulado',
+        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS',
+        markers=True
+    )
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
 
     # Cards de resumo financeiro para PIS/COFINS
@@ -286,11 +299,6 @@ elif filtro_grafico == "📗 PIS e COFINS":
     col1.metric("💳 Total Créditos", f"R$ {credito_total:,.2f}")
     col2.metric("📌 Total Débitos", f"R$ {debito_total:,.2f}")
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
-
-    # Tabela detalhada
-    st.subheader("📋 Tabela Detalhada PIS e COFINS")
-    st.dataframe(piscofins_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
-                 use_container_width=True)
 
 elif filtro_grafico == "📘 DRE Trimestral":
     st.subheader("📘 DRE Trimestral")
