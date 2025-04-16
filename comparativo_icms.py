@@ -44,7 +44,7 @@ with st.sidebar:
 # Título principal estilizado
 st.markdown("""
     <h1 style='color: #C89D4A; text-align: center; font-size: 42px;'>
-        📊 Relatório de Análise Fiscal e Contábil
+        📊 Relatório Gerencial - Neto Contabilidade
     </h1>
     <hr style='border:1px solid #C89D4A'>
 """, unsafe_allow_html=True)
@@ -213,7 +213,7 @@ aliq_cores = {
 
 # ========== GERAÇÃO DOS GRÁFICOS ==========
 if filtro_grafico == "Mapa por UF":
-    st.subheader("📍 Mapa de Apuração por UF")
+    st.subheader("✅ 📍 Distribuição de Compras e Vendas por Estado (UF)")
     col1, col2 = st.columns(2)
     with col1:
         uf_compras = entradas_filtradas.groupby('UF do Emitente')['Valor Total'].sum().reset_index()
@@ -236,12 +236,12 @@ if filtro_grafico == "Mapa por UF":
         st.plotly_chart(fig_pie2, use_container_width=True)
 
 elif filtro_grafico == "Comparativo de Crédito x Débito":
-    st.subheader("📊 Comparativo de Crédito x Débito")
+    st.subheader("📊 Comparativo Mensal de ICMS")
     df_bar = comparativo_filtrado.melt(id_vars='Mês', value_vars=['ICMS Crédito', 'ICMS Débito'])
     fig_bar = px.bar(df_bar, x='Mês', y='value', color='variable', barmode='group', text_auto='.2s')
     st.plotly_chart(fig_bar, use_container_width=True)
 
-    st.subheader("📊 Compras e Apuração por Alíquota de ICMS")
+    st.subheader("📊 Distribuição de ICMS por Faixa de Alíquota")
     df_aliq = entradas_filtradas.copy()
     df_aliq['Aliquota'] = (df_aliq['Alíquota ICMS'] * 100).round(0).astype(int)
     df_aliq['Crédito ICMS Estimado'] = df_aliq['Valor ICMS']
@@ -275,12 +275,12 @@ elif filtro_grafico == "Comparativo de Crédito x Débito":
         st.plotly_chart(fig_pie_debito, use_container_width=True)
 
 elif filtro_grafico == "Relatórios Detalhados":
-    st.subheader("📄 Relatórios Detalhados e Download de Tabelas")
+    st.subheader("📄 Dados Fiscais Detalhados (.xlsx)")
 
-    st.subheader("📥 Entradas Filtradas")
+    st.subheader("✅ 📥 Notas Fiscais de Entrada")
     st.dataframe(entradas_filtradas.fillna("").astype(str), use_container_width=True)
 
-    st.subheader("📤 Saídas Filtradas")
+    st.subheader("✅ 📤 Notas Fiscais de Saída")
     st.dataframe(saidas_filtradas.fillna("").astype(str), use_container_width=True)
 
     st.write("### 📊 Comparativo de Crédito x Débito com Crédito Acumulado")
@@ -307,7 +307,7 @@ elif filtro_grafico == "Relatórios Detalhados":
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 elif filtro_grafico == "📘 Contabilidade e Caixa":
-    st.subheader("📘 Contabilidade e Caixa")
+    st.subheader("📘 Caixa Contábil no Período")
 
     caixa_df['Entradas'] = pd.to_numeric(caixa_df['Entradas'], errors='coerce').fillna(0)
     caixa_df['Saídas'] = pd.to_numeric(caixa_df['Saídas'], errors='coerce').fillna(0)
@@ -343,7 +343,7 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     plotar_saldo_mensal(caixa_df, meses_selecionados)
 
 elif filtro_grafico == "📗 PIS e COFINS":
-    st.subheader("📗 Apuração PIS e COFINS")
+    st.subheader("📗 Situação Fiscal de PIS e COFINS")
 
     ordem_meses = {"Janeiro": 1, "Fevereiro": 2, "Março": 3}
     meses_filtro = {
@@ -406,7 +406,7 @@ elif filtro_grafico == "📗 PIS e COFINS":
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
 
 elif filtro_grafico == "📘 DRE Trimestral":
-    st.subheader("📘 DRE Trimestral")
+    st.subheader("✅ 📘 Demonstrativo de Resultado do Exercício (DRE)")
     dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
     dre_total = dre_df.groupby('Descrição')['Valor'].sum().reset_index()
 
@@ -415,7 +415,7 @@ elif filtro_grafico == "📘 DRE Trimestral":
     st.dataframe(dre_df, use_container_width=True)
 
 elif filtro_grafico == "📑 Tabelas Contabilidade":
-    st.subheader("📑 Todas as Tabelas de Contabilidade")
+    st.subheader("📑 Todas as Tabelas Contábeis")
 
     st.markdown("### Caixa")
     st.dataframe(caixa_df, use_container_width=True)
