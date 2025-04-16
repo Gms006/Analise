@@ -233,7 +233,19 @@ filtro_periodo = st.sidebar.selectbox(
     ["Janeiro/2025", "Fevereiro/2025", "Março/2025", "1º Trimestre/2025"],
     key="periodo"
 )
-# (Removido: selectbox duplicado de filtro_grafico para evitar conflito de widgets)
+filtro_grafico = st.sidebar.selectbox(
+    "Tipo de gráfico/relatório:",
+    [
+        "Mapa por UF",
+        "Comparativo de Crédito x Débito",
+        "Apuração com Crédito Acumulado",
+        "Relatórios Detalhados",
+        "📘 Contabilidade e Caixa",
+        "📗 PIS e COFINS",
+        "📘 DRE Trimestral",
+        "📑 Tabelas Contabilidade"
+    ]
+)
 meses_filtrados = periodos[filtro_periodo]
 entradas_filtradas = entradas[entradas['Mês'].dt.month.isin(meses_filtrados)]
 saidas_filtradas = saidas[saidas['Mês'].dt.month.isin(meses_filtrados)]
@@ -331,6 +343,37 @@ elif filtro_grafico == "Comparativo de Crédito x Débito":
         st.plotly_chart(fig_pie_credito, use_container_width=True)
     with col4:
         st.plotly_chart(fig_pie_debito, use_container_width=True)
+
+# =========================
+# 12. BOTÃO DE DOWNLOAD GLOBAL
+# =========================
+# === CATEGORIAS DE RELATÓRIOS ===
+aba = st.sidebar.radio(
+    "📁 Tipo de Relatório:",
+    ["📂 Fiscal", "📊 Contábil"]
+)
+
+# === OPÇÕES DINÂMICAS DEPENDENDO DA CATEGORIA ===
+if aba == "📂 Fiscal":
+    filtro_grafico = st.sidebar.selectbox(
+        "📄 Relatórios Fiscais:",
+        [
+            "Mapa por UF",
+            "Comparativo de Crédito x Débito",
+            "Apuração com Crédito Acumulado",
+            "Relatórios Detalhados"
+        ]
+    )
+else:
+    filtro_grafico = st.sidebar.selectbox(
+        "📘 Relatórios Contábeis:",
+        [
+            "📘 Contabilidade e Caixa",
+            "📗 PIS e COFINS",
+            "📘 DRE Trimestral",
+            "📑 Tabelas Contabilidade"
+        ]
+    )
 
 elif filtro_grafico == "Relatórios Detalhados":
     bloco_visual(
