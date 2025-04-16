@@ -6,7 +6,7 @@ from io import BytesIO
 
 # ========== CONFIGURAÇÕES ==========
 st.set_page_config(layout="wide")
-st.title("📊 Relatório Trimestral GH Sistemas")
+st.title("📊 Relatório GH Sistemas")
 caminho_planilha = "notas_processadas1.xlsx"
 
 # ========== LEITURA ==========
@@ -286,8 +286,8 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     margem = (saldo_final / receita_total * 100) if receita_total != 0 else 0
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("📈 Receita Total", f"R$ {receita_total:,.2f}")
-    col2.metric("📉 Despesa Total", f"R$ {despesa_total:,.2f}")
+    col1.metric("📈 Total de Entradas", f"R$ {receita_total:,.2f}")
+    col2.metric("📉 Total de Saídas", f"R$ {despesa_total:,.2f}")
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
     col4.metric("📌 Margem (%)", f"{margem:.2f}%")
 
