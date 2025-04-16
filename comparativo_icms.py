@@ -293,10 +293,6 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
 
     plotar_saldo_mensal(caixa_df, meses_selecionados)
 
-    st.subheader("🗃️ Tabela Detalhada de Caixa")
-    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entradas', 'Saídas', 'Valor Líquido', 'Saldo Acumulado']],
-                 use_container_width=True)
-
 elif filtro_grafico == "📗 PIS e COFINS":
     st.subheader("📗 Apuração PIS e COFINS")
 
@@ -310,10 +306,6 @@ elif filtro_grafico == "📗 PIS e COFINS":
     meses_selecionados = meses_filtro[filtro_periodo]
     piscofins_filtrado = piscofins_df[piscofins_df['Mês'].isin(meses_selecionados)]
     piscofins_filtrado = piscofins_filtrado.sort_values(by="Mês", key=lambda x: x.map(ordem_meses))
-
-    st.subheader("📋 Tabela Detalhada PIS e COFINS")
-    st.dataframe(piscofins_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
-                 use_container_width=True)
 
     fig_pis = px.bar(piscofins_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
                      title='Créditos vs Débitos PIS e COFINS')
@@ -340,8 +332,6 @@ elif filtro_grafico == "📘 DRE Trimestral":
     st.subheader("📘 DRE Trimestral")
     dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
     dre_total = dre_df.groupby('Descrição')['Valor'].sum().reset_index()
-
-    st.dataframe(dre_total, use_container_width=True)
 
     grupo = dre_total[dre_total['Descrição'].str.contains("Receita|Resultado", case=False)]
     fig_dre = px.bar(grupo, x='Descrição', y='Valor', title="Receita vs Resultado Líquido")
