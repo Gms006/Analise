@@ -217,7 +217,11 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
 # =========================
 # 8. FILTROS DINÂMICOS
 # =========================
-st.sidebar.header('<i class="fas fa-sliders-h"></i> <span style="color:#C89D4A;">Filtros</span>', unsafe_allow_html=True)
+st.sidebar.markdown("""
+<h3 style="color:#C89D4A; margin-bottom: 0;">
+    <i class="fas fa-sliders-h"></i> Filtros
+</h3>
+""", unsafe_allow_html=True)
 periodos = {
     "Janeiro/2025": [1],
     "Fevereiro/2025": [2],
