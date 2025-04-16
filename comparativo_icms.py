@@ -485,14 +485,23 @@ elif filtro_grafico == "📘 DRE Trimestral":
         "Resumo do resultado do exercício, com receitas, deduções, custos, despesas e lucro/prejuízo final. <i class='fas fa-info-circle'></i>"
     )
 
-    receita_bruta = dre_df.iloc[1,2]
-    deducoes = dre_df.iloc[5,2]
-    receita_liquida = dre_df.iloc[6,2]
-    custo_mercadorias = dre_df.iloc[8,2]
-    lucro_bruto = dre_df.iloc[12,2]
-    despesas = dre_df.iloc[13,2]
-    resultado_operacional = dre_df.iloc[15,2]
-    resultado_liquido = dre_df.iloc[19,2]
+    def get_dre_val(desc):
+        row = dre_df[dre_df['Descrição'].str.strip().str.upper() == desc.strip().upper()]
+        if not row.empty:
+            val = row['Saldo'].values[0]
+            try:
+                return float(str(val).replace("R$", "").replace(".", "").replace(",", "."))
+            except Exception:
+                return 0.0
+        return 0.0
+
+    receita_bruta = get_dre_val("VENDA DE MERCADORIAS A VISTA")
+    deducoes = get_dre_val("(-) Deduções das Receitas Operacionais")
+    receita_liquida = get_dre_val("Total das Receitas Operacionais Líquidas")
+    custo_mercadorias = get_dre_val("Custos das Mercadorias Vendidas")
+    lucro_bruto = get_dre_val("Lucro e/ou Prejuízo Operacional Bruto")
+    despesas = get_dre_val("Despesas Administrativas")
+    resultado_liquido = get_dre_val("Resultado liquido do exercicio")
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Receita Bruta", f"R$ {receita_bruta:,.2f}")
@@ -508,7 +517,7 @@ elif filtro_grafico == "📘 DRE Trimestral":
           <span style="color:#00FFAA;">R$ {receita_bruta:,.2f}</span>
         </li>
         <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
-          <i class="fas fa-minus-circle"></i> (-) Deduções (ICMS, COFINS, PIS):
+          <i class="fas fa-minus-circle"></i> (-) Deduções:
           <span style="color:#FFA500;">R$ {deducoes:,.2f}</span>
         </li>
         <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
@@ -523,17 +532,13 @@ elif filtro_grafico == "📘 DRE Trimestral":
         <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
         <li style="padding:8px 0; color:#C89D4A;">
           <i class="fas fa-chart-line"></i> <b>Lucro Bruto:</b>
-          <span style="color:#00FFAA;">R$ {lucro_bruto:,.2f}</span>
+          <span style="color:{'#00FFAA' if lucro_bruto >= 0 else '#FF5555'};">R$ {lucro_bruto:,.2f}</span>
         </li>
         <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
           <i class="fas fa-money-bill-wave"></i> (-) Despesas Administrativas:
           <span style="color:#FFA500;">R$ {despesas:,.2f}</span>
         </li>
         <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
-        <li style="padding:8px 0; color:#C89D4A;">
-          <i class="fas fa-balance-scale-left"></i> <b>Resultado Operacional:</b>
-          <span style="color:{'#00FFAA' if resultado_operacional >= 0 else '#FF5555'};">R$ {resultado_operacional:,.2f}</span>
-        </li>
         <li style="padding:8px 0; color:#C89D4A;">
           <i class="fas fa-coins"></i> <b>Resultado Líquido do Exercício:</b>
           <span style="color:{'#00FFAA' if resultado_liquido >= 0 else '#FF5555'};">R$ {resultado_liquido:,.2f}</span>
