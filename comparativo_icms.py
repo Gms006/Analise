@@ -478,6 +478,21 @@ elif filtro_grafico == "📗 PIS e COFINS":
     )
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
 
+elif filtro_grafico == "📘 DRE Trimestral":
+    bloco_visual(
+        "Demonstração do Resultado do Exercício (DRE)",
+        "file-contract",
+        "Veja o detalhamento da DRE do período selecionado, com receitas, custos, despesas e resultado final. <i class='fas fa-info-circle'></i>"
+    )
+    st.markdown(
+        "<h3 style='color:#C89D4A;'><i class='fas fa-table'></i> Tabela DRE 1º Trimestre</h3>",
+        unsafe_allow_html=True
+    )
+    st.dataframe(
+        dre_df.style.format(precision=2, thousands=".", decimal=","),
+        use_container_width=True
+    )
+
 # =========================
 # 13. RODAPÉ INSTITUCIONAL
 # =========================
