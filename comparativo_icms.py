@@ -486,49 +486,11 @@ elif filtro_grafico == "📗 PIS e COFINS":
             pontos.append({'Mês': mes_nome, 'Saldo': -saldo_fim.iloc[-1]})
     df_pontos = pd.DataFrame(pontos)
     fig_saldo_pis = px.line(
-        df_pontos, x='Mês', y='Saldo',
-        title='Evolução do Saldo Acumulado - PIS e COFINS',
-# =========================
-# 12. BOTÃO DE DOWNLOAD GLOBAL
-# =========================
-def to_excel():
-    output = BytesIO()
-aba = st.sidebar.radio(
-    "📁 Tipo de Relatório:",
-    ["📂 Fiscal", "📊 Contábil"]
-)
+    df_pontos, x='Mês', y='Saldo',
+        title='Evolução do Saldo Acumulado - PIS e COFINS'
+    )
+    st.plotly_chart(fig_saldo_pis, use_container_width=True)
 
-# === OPÇÕES DINÂMICAS DEPENDENDO DA CATEGORIA ===
-if aba == "📂 Fiscal":
-    filtro_grafico = st.sidebar.selectbox(
-        "📄 Relatórios Fiscais:",
-        [
-            "Mapa por UF",
-            "Comparativo de Crédito x Débito",
-            "Apuração com Crédito Acumulado",
-            "Relatórios Detalhados"
-        ]
-    )
-else:
-    filtro_grafico = st.sidebar.selectbox(
-        "📘 Relatórios Contábeis:",
-        [
-            "📘 Contabilidade e Caixa",
-            "📗 PIS e COFINS",
-            "📘 DRE Trimestral",
-            "📑 Tabelas Contabilidade"
-        ]
-    )
-def to_excel():
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        entradas_filtradas.to_excel(writer, sheet_name="Entradas", index=False)
-        saidas_filtradas.to_excel(writer, sheet_name="Saídas", index=False)
-        comparativo_filtrado.to_excel(writer, sheet_name="Apuracao", index=False)
-        caixa_df.to_excel(writer, sheet_name="Caixa", index=False)
-        piscofins_df.to_excel(writer, sheet_name="PISCOFINS", index=False)
-        dre_df.to_excel(writer, sheet_name="DRE", index=False)
-    return output.getvalue()
 # =========================
 # 13. RODAPÉ INSTITUCIONAL
 # =========================
