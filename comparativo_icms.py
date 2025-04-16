@@ -5,6 +5,14 @@ import plotly.colors as pc
 from io import BytesIO
 import base64
 
+# ========== CONFIGURAÇÕES ==========
+st.set_page_config(
+    layout="wide",
+    page_title="Relatório GH Sistemas",
+    page_icon="📊",
+    initial_sidebar_state="expanded"
+)
+
 # ========== IDENTIDADE VISUAL E LOGO ==========
 
 def set_background(path):
@@ -41,13 +49,6 @@ st.markdown("""
     <hr style='border:1px solid #C89D4A'>
 """, unsafe_allow_html=True)
 
-# ========== CONFIGURAÇÕES ==========
-st.set_page_config(
-    layout="wide",
-    page_title="Relatório GH Sistemas",
-    page_icon="📊",
-    initial_sidebar_state="expanded"
-)
 st.title("📊 Relatório GH Sistemas")
 caminho_planilha = "notas_processadas1.xlsx"
 
