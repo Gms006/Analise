@@ -491,7 +491,33 @@ elif filtro_grafico == "📑 Tabelas Contabilidade":
 # =========================
 # 12. BOTÃO DE DOWNLOAD GLOBAL
 # =========================
+# === CATEGORIAS DE RELATÓRIOS ===
+aba = st.sidebar.radio(
+    "📁 Tipo de Relatório:",
+    ["📂 Fiscal", "📊 Contábil"]
+)
 
+# === OPÇÕES DINÂMICAS DEPENDENDO DA CATEGORIA ===
+if aba == "📂 Fiscal":
+    filtro_grafico = st.sidebar.selectbox(
+        "📄 Relatórios Fiscais:",
+        [
+            "Mapa por UF",
+            "Comparativo de Crédito x Débito",
+            "Apuração com Crédito Acumulado",
+            "Relatórios Detalhados"
+        ]
+    )
+else:
+    filtro_grafico = st.sidebar.selectbox(
+        "📘 Relatórios Contábeis:",
+        [
+            "📘 Contabilidade e Caixa",
+            "📗 PIS e COFINS",
+            "📘 DRE Trimestral",
+            "📑 Tabelas Contabilidade"
+        ]
+    )
 def to_excel():
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
