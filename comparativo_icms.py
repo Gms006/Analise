@@ -106,16 +106,15 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
         data_fim = df_mes['Data'].iloc[-1]
         pontos.append({'Data': data_fim, 'Saldo Acumulado': saldo_fim, 'Mês': mes})
 
-    # Para trimestre: garantir o saldo final do último dia de cada mês
-    if len(meses_selecionados) > 1:
-        df_pontos = pd.DataFrame(pontos)
-        df_pontos['Data'] = pd.to_datetime(df_pontos['Data'], errors='coerce')
-        df_pontos['Mês'] = df_pontos['Data'].dt.month
-        df_pontos = df_pontos.sort_values('Data')
-        df_pontos = df_pontos.groupby('Mês', as_index=False).last()
-    else:
-        df_pontos = pd.DataFrame(pontos)
+    df_pontos = pd.DataFrame(pontos)
+    df_pontos['Data'] = pd.to_datetime(df_pontos['Data'], errors='coerce')
+    df_pontos['Mês'] = df_pontos['Data'].dt.month
 
+    if len(meses_selecionados) > 1:
+        # Seleciona o último ponto de cada mês com base na maior data
+        df_pontos = df_pontos.sort_values('Data')
+        df_pontos = df_pontos.loc[df_pontos.groupby('Mês')['Data'].idxmax()]
+    
     fig = px.line(df_pontos, x="Data", y="Saldo Acumulado", markers=True, title="Evolução Decacional do Saldo Acumulado - Caixa")
     st.plotly_chart(fig, use_container_width=True)
 
