@@ -33,8 +33,8 @@ for df in [entradas, saidas]:
 planilha_contabil = pd.read_excel("Contabilidade.xlsx", sheet_name=None)
 caixa_df = planilha_contabil['Caixa']
 
-# Ajuste: agora só existe uma aba PISCOFINS unificada
-pis_cofins_df = planilha_contabil['PISCOFINS']  # Certifique-se que o nome da aba está correto
+# Ajuste: agora só existe uma aba PIS/COFINS unificada
+pis_cofins_df = planilha_contabil['PIS/COFINS']  # Certifique-se que o nome da aba está correto
 dre_df = planilha_contabil['DRE 1º Trimestre']
 
 # ========== FILTROS DINÂMICOS ==========
@@ -195,9 +195,10 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     caixa_df['Mês'] = caixa_df['Data'].dt.month
     caixa_df['Ano'] = caixa_df['Data'].dt.year
 
-    # Convertendo Entradas e Saídas corretamente (Entradas positivas e Saídas negativas)
-    caixa_df['Entrada'] = pd.to_numeric(caixa_df.get('Entrada', 0), errors='coerce').fillna(0)
-    caixa_df['Saída'] = pd.to_numeric(caixa_df.get('Saída', 0), errors='coerce').fillna(0)
+    # Ajuste para colunas: Data, Descricao, Débito, Crédito, Saldo
+    # Entrada = Crédito (positivo), Saída = Débito (negativo)
+    caixa_df['Entrada'] = pd.to_numeric(caixa_df['Crédito'], errors='coerce').fillna(0)
+    caixa_df['Saída'] = pd.to_numeric(caixa_df['Débito'], errors='coerce').fillna(0)
 
     caixa_df['Valor Líquido'] = caixa_df['Entrada'] - caixa_df['Saída']
 
