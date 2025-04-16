@@ -333,34 +333,31 @@ elif filtro_grafico == "📗 PIS e COFINS":
     fig_bar = px.bar(df_bar, x='Tipo', y='Valor', text_auto='.2s', color='Tipo', title="Créditos x Débitos no Período")
     st.plotly_chart(fig_bar, use_container_width=True)
 
-    # Gráfico de linha do saldo acumulado
+    # Gráfico de linha do saldo acumulado (inverter sinal)
     pontos = []
     if len(meses_selecionados) == 1:
         mes_nome = meses_selecionados[0]
         mes_num = ordem_meses[mes_nome]
 
-        # Saldo anterior: último saldo do mês anterior (se existir)
         saldo_anterior = piscofins_ordenado[piscofins_ordenado['Ordem'] < mes_num]['Saldo']
         saldo_anterior = saldo_anterior.iloc[-1] if not saldo_anterior.empty else 0
-        pontos.append({'Mês': f"{mes_nome} - Início", 'Saldo': saldo_anterior})
+        pontos.append({'Mês': f"{mes_nome} - Início", 'Saldo': -saldo_anterior})
 
-        # Saldo final do mês selecionado
         saldo_fim = piscofins_ordenado[piscofins_ordenado['Ordem'] == mes_num]['Saldo']
         saldo_fim = saldo_fim.iloc[-1] if not saldo_fim.empty else saldo_anterior
-        pontos.append({'Mês': f"{mes_nome} - Fim", 'Saldo': saldo_fim})
+        pontos.append({'Mês': f"{mes_nome} - Fim", 'Saldo': -saldo_fim})
 
     else:
-        # Trimestre: 1 ponto por saldo final de cada mês
         for mes_nome in meses_selecionados:
             saldo_fim = piscofins_ordenado[piscofins_ordenado['Mês'] == mes_nome]['Saldo']
             if saldo_fim.empty:
                 continue
-            pontos.append({'Mês': mes_nome, 'Saldo': saldo_fim.iloc[-1]})
+            pontos.append({'Mês': mes_nome, 'Saldo': -saldo_fim.iloc[-1]})
 
     df_pontos = pd.DataFrame(pontos)
     fig_saldo_pis = px.line(
         df_pontos, x='Mês', y='Saldo',
-        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS',
+        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS (Crédito negativo é positivo no gráfico)',
         markers=True
     )
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
