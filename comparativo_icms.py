@@ -341,9 +341,6 @@ elif filtro_grafico == "📗 PIS e COFINS":
             barmode='group', title='Crédito x Débito por Mês'
         )
         st.plotly_chart(fig_bar, use_container_width=True)
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
-
 elif filtro_grafico == "📘 DRE Trimestral":
     st.subheader("📘 DRE Trimestral")
     dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
