@@ -485,7 +485,7 @@ elif filtro_grafico == "📘 DRE Trimestral":
         "Resumo do resultado do exercício, com receitas, deduções, custos, despesas e lucro/prejuízo final. <i class='fas fa-info-circle'></i>"
     )
 
-        def get_dre_val(desc):
+    def get_dre_val(desc):
         row = dre_df[dre_df['Descrição'].str.strip().str.upper() == desc.strip().upper()]
         if not row.empty:
             val = row['Saldo'].values[0]
