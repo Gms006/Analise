@@ -516,42 +516,42 @@ elif filtro_grafico == "📘 DRE Trimestral":
     col4.metric("Resultado Líquido", resultado_liquido)
 
     st.markdown(f"""
-    <div style="background:#22304A; border-radius:10px; padding:24px; margin-top:20px;">
-      <ul style="list-style:none; padding-left:0; font-size:18px;">
-        <li style="padding:8px 0; color:#C89D4A;">
-          <i class="fas fa-cash-register"></i> <b>Receita Operacional Bruta:</b>
-          <span style="color:#00FFAA;">R$ {receita_bruta:,.2f}</span>
-        </li>
-        <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
-          <i class="fas fa-minus-circle"></i> (-) Deduções:
-          <span style="color:#FFA500;">R$ {deducoes:,.2f}</span>
-        </li>
-        <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
-        <li style="padding:8px 0; color:#C89D4A;">
-          <i class="fas fa-file-invoice-dollar"></i> <b>Receita Líquida:</b>
-          <span style="color:#00FFAA;">R$ {receita_liquida:,.2f}</span>
-        </li>
-        <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
-          <i class="fas fa-box"></i> (-) Custos das Mercadorias Vendidas:
-          <span style="color:#FFA500;">R$ {custo_mercadorias:,.2f}</span>
-        </li>
-        <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
-        <li style="padding:8px 0; color:#C89D4A;">
-          <i class="fas fa-chart-line"></i> <b>Lucro Bruto:</b>
-          <span style="color:{'#00FFAA' if lucro_bruto >= 0 else '#FF5555'};">R$ {lucro_bruto:,.2f}</span>
-        </li>
-        <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
-          <i class="fas fa-money-bill-wave"></i> (-) Despesas Administrativas:
-          <span style="color:#FFA500;">R$ {despesas:,.2f}</span>
-        </li>
-        <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
-        <li style="padding:8px 0; color:#C89D4A;">
-          <i class="fas fa-coins"></i> <b>Resultado Líquido do Exercício:</b>
-          <span style="color:{'#00FFAA' if resultado_liquido >= 0 else '#FF5555'};">R$ {resultado_liquido:,.2f}</span>
-        </li>
-      </ul>
-    </div>
-    """, unsafe_allow_html=True)
+        <div style="background:#22304A; border-radius:10px; padding:24px; margin-top:20px;">
+          <ul style="list-style:none; padding-left:0; font-size:18px;">
+            <li style="padding:8px 0; color:#C89D4A;">
+              <i class="fas fa-cash-register"></i> <b>Receita Operacional Bruta:</b>
+              <span style="color:#00FFAA;">{receita_bruta}</span>
+            </li>
+            <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
+              <i class="fas fa-minus-circle"></i> (-) Deduções:
+              <span style="color:#FFA500;">{deducoes}</span>
+            </li>
+            <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
+            <li style="padding:8px 0; color:#C89D4A;">
+              <i class="fas fa-file-invoice-dollar"></i> <b>Receita Líquida:</b>
+              <span style="color:#00FFAA;">{receita_liquida}</span>
+            </li>
+            <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
+              <i class="fas fa-box"></i> (-) Custos das Mercadorias Vendidas:
+              <span style="color:#FFA500;">{custo_mercadorias}</span>
+            </li>
+            <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
+            <li style="padding:8px 0; color:#C89D4A;">
+              <i class="fas fa-chart-line"></i> <b>Lucro Bruto:</b>
+              <span style="color:{'#00FFAA' if lucro_bruto.replace('R$', '').replace('.', '').replace(',', '.').strip() and float(lucro_bruto.replace('R$', '').replace('.', '').replace(',', '.')) >= 0 else '#FF5555'};">{lucro_bruto}</span>
+            </li>
+            <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
+              <i class="fas fa-money-bill-wave"></i> (-) Despesas Administrativas:
+              <span style="color:#FFA500;">{despesas}</span>
+            </li>
+            <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
+            <li style="padding:8px 0; color:#C89D4A;">
+              <i class="fas fa-coins"></i> <b>Resultado Líquido do Exercício:</b>
+              <span style="color:{'#00FFAA' if resultado_liquido.replace('R$', '').replace('.', '').replace(',', '.').strip() and float(resultado_liquido.replace('R$', '').replace('.', '').replace(',', '.')) >= 0 else '#FF5555'};">{resultado_liquido}</span>
+            </li>
+          </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
 # =========================
 # 13. RODAPÉ INSTITUCIONAL
