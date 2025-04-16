@@ -3,9 +3,51 @@ import streamlit as st
 import plotly.express as px
 import plotly.colors as pc
 from io import BytesIO
+import base64
+
+# ========== IDENTIDADE VISUAL E LOGO ==========
+
+def set_background(path):
+    with open(path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{encoded}");
+            background-position: top right;
+            background-repeat: no-repeat;
+            background-size: 300px;
+            background-attachment: fixed;
+            background-color: #1E2B3D;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+set_background("logo.png")
+
+# Logo e título na sidebar
+with st.sidebar:
+    st.image("logo.png", use_column_width=True)
+    st.markdown("<h3 style='text-align: center; color: #C89D4A;'>Neto Contabilidade</h3>", unsafe_allow_html=True)
+
+# Título principal estilizado
+st.markdown("""
+    <h1 style='color: #C89D4A; text-align: center; font-size: 42px;'>
+        📊 Relatório de Análise Fiscal e Contábil
+    </h1>
+    <hr style='border:1px solid #C89D4A'>
+""", unsafe_allow_html=True)
 
 # ========== CONFIGURAÇÕES ==========
-st.set_page_config(layout="wide")
+st.set_page_config(
+    layout="wide",
+    page_title="Relatório GH Sistemas",
+    page_icon="📊",
+    initial_sidebar_state="expanded"
+)
 st.title("📊 Relatório GH Sistemas")
 caminho_planilha = "notas_processadas1.xlsx"
 
@@ -126,6 +168,7 @@ if aba == "Fiscal":
     filtro_grafico = st.sidebar.selectbox("Tipo de gráfico Fiscal:", [
         "Mapa por UF",
         "Comparativo de Crédito x Débito",
+        "Apuração com Crédito Acumulado",
         "Relatórios Detalhados",
     ])
 else:
