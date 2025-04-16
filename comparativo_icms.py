@@ -491,7 +491,7 @@ elif filtro_grafico == "📑 Tabelas Contabilidade":
 # =========================
 # 12. BOTÃO DE DOWNLOAD GLOBAL
 # =========================
-def to_excel():
+
 def to_excel():
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -501,8 +501,7 @@ def to_excel():
         caixa_df.to_excel(writer, sheet_name="Caixa", index=False)
         piscofins_df.to_excel(writer, sheet_name="PISCOFINS", index=False)
         dre_df.to_excel(writer, sheet_name="DRE", index=False)
-    processed_data = output.getvalue()
-    return processed_data
+    return output.getvalue()
 # =========================
 # 13. RODAPÉ INSTITUCIONAL
 # =========================
