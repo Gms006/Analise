@@ -65,10 +65,50 @@ def calcular_saldo_com_acumulado(df, meses_filtrados):
     return df_filtrado
 
 def plotar_saldo_mensal(caixa_df, meses_selecionados):
-    if 'Data' in caixa_df.columns and 'Entradas' in caixa_df.columns and 'Saídas' in caixa_df.columns:
-        df_grafico = calcular_saldo_com_acumulado(caixa_df, meses_selecionados)
-        fig = px.line(df_grafico, x="Data", y="Saldo Acumulado", title="Evolução do Saldo Acumulado - Caixa", markers=True)
-        st.plotly_chart(fig, use_container_width=True)
+    df = caixa_df.copy()
+    df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
+    df = df.sort_values('Data').reset_index(drop=True)
+    df['Mês'] = df['Data'].dt.month
+    df['Ano'] = df['Data'].dt.year
+    df['Valor Líquido'] = df['Entradas'] - df['Saídas']
+    pontos = []
+
+    for mes in meses_selecionados:
+        ano = df[df['Mês'] == mes]['Ano'].iloc[0] if not df[df['Mês'] == mes].empty else None
+        if ano is None:
+            continue
+
+        # Saldo final do mês anterior
+        df_ant = df[(df['Ano'] == ano) & (df['Mês'] == (mes - 1))]
+        if not df_ant.empty:
+            saldo_ant = df_ant['Valor Líquido'].cumsum().iloc[-1]
+            data_ant = df_ant['Data'].iloc[-1]
+        else:
+            saldo_ant = df[df['Data'] < f"{ano}-{mes:02d}-01"]['Valor Líquido'].sum()
+            data_ant = pd.Timestamp(f"{ano}-{mes:02d}-01") - pd.Timedelta(days=1)
+        pontos.append({'Data': data_ant, 'Saldo Acumulado': saldo_ant, 'Mês': mes})
+
+        # Saldo no dia 15 do mês
+        df_mes = df[(df['Ano'] == ano) & (df['Mês'] == mes) & (df['Data'] <= f"{ano}-{mes:02d}-15")]
+        if not df_mes.empty:
+            saldo_15 = df_mes['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
+            data_15 = pd.Timestamp(f"{ano}-{mes:02d}-15")
+            pontos.append({'Data': data_15, 'Saldo Acumulado': saldo_15, 'Mês': mes})
+
+        # Saldo final do mês
+        df_mes_full = df[(df['Ano'] == ano) & (df['Mês'] == mes)]
+        if not df_mes_full.empty:
+            saldo_fim = df_mes_full['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
+            data_fim = df_mes_full['Data'].iloc[-1]
+            pontos.append({'Data': data_fim, 'Saldo Acumulado': saldo_fim, 'Mês': mes})
+
+    # Para trimestre: apenas saldo final de cada mês
+    if len(meses_selecionados) > 1:
+        pontos = [p for i, p in enumerate(pontos) if (i % 3 == 2)]
+
+    df_pontos = pd.DataFrame(pontos)
+    fig = px.line(df_pontos, x="Data", y="Saldo Acumulado", markers=True, title="Evolução Decacional do Saldo Acumulado - Caixa")
+    st.plotly_chart(fig, use_container_width=True)
 
 # ========== FILTROS DINÂMICOS ==========
 st.sidebar.header("🎛️ Filtros")
