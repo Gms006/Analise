@@ -307,18 +307,7 @@ elif filtro_grafico == "📗 PIS e COFINS":
     piscofins_filtrado = piscofins_df[piscofins_df['Mês'].isin(meses_selecionados)]
     piscofins_filtrado = piscofins_filtrado.sort_values(by="Mês", key=lambda x: x.map(ordem_meses))
 
-    fig_pis = px.bar(piscofins_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
-                     title='Créditos vs Débitos PIS e COFINS')
-    st.plotly_chart(fig_pis, use_container_width=True)
-
-    piscofins_filtrado['Saldo Acumulado'] = piscofins_filtrado['Saldo'].cumsum()
-    fig_saldo_pis = px.line(
-        piscofins_filtrado, x='Mês', y='Saldo Acumulado',
-        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS',
-        markers=True
-    )
-    st.plotly_chart(fig_saldo_pis, use_container_width=True)
-
+    # Relatório fixo no início
     credito_total = piscofins_filtrado['Crédito'].sum()
     debito_total = piscofins_filtrado['Débito'].sum()
     saldo_final = credito_total - debito_total
@@ -328,11 +317,30 @@ elif filtro_grafico == "📗 PIS e COFINS":
     col2.metric("📌 Total Débitos", f"R$ {debito_total:,.2f}")
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
 
+    # Gráfico: apenas saldo final de cada mês (igual ao trimestre do caixa)
+    pontos = []
+    for mes_nome in meses_selecionados:
+        df_mes = piscofins_filtrado[piscofins_filtrado['Mês'] == mes_nome]
+        if df_mes.empty:
+            continue
+        data_fim = df_mes.index[-1]
+        saldo_fim = df_mes['Saldo'].iloc[-1]
+        pontos.append({'Mês': mes_nome, 'Saldo Acumulado': saldo_fim})
+
+    df_pontos = pd.DataFrame(pontos)
+    fig_saldo_pis = px.line(
+        df_pontos, x='Mês', y='Saldo Acumulado',
+        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS',
+        markers=True
+    )
+    st.plotly_chart(fig_saldo_pis, use_container_width=True)
+
 elif filtro_grafico == "📘 DRE Trimestral":
     st.subheader("📘 DRE Trimestral")
     dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
     dre_total = dre_df.groupby('Descrição')['Valor'].sum().reset_index()
 
+    # Gráficos principais
     grupo = dre_total[dre_total['Descrição'].str.contains("Receita|Resultado", case=False)]
     fig_dre = px.bar(grupo, x='Descrição', y='Valor', title="Receita vs Resultado Líquido")
     st.plotly_chart(fig_dre, use_container_width=True)
@@ -348,6 +356,10 @@ elif filtro_grafico == "📘 DRE Trimestral":
         st.error(f"❌ Prejuízo apurado no período: R$ {abs(resultado):,.2f}")
     else:
         st.success(f"✅ Lucro apurado no período: R$ {resultado:,.2f}")
+
+    # Tabela dinâmica e fácil de visualizar
+    st.markdown("### 📋 Tabela Completa DRE")
+    st.dataframe(dre_df, use_container_width=True)
 
 elif filtro_grafico == "📑 Tabelas Contabilidade":
     st.subheader("📑 Todas as Tabelas de Contabilidade")
