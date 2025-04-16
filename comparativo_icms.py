@@ -310,10 +310,12 @@ elif filtro_grafico == "📗 PIS e COFINS":
         "1º Trimestre/2025": ["Janeiro", "Fevereiro", "Março"]
     }
     meses_selecionados = meses_filtro[filtro_periodo]
-    piscofins_filtrado = piscofins_df[piscofins_df['Mês'].isin(meses_selecionados)]
-    piscofins_filtrado = piscofins_filtrado.sort_values(by="Mês", key=lambda x: x.map(ordem_meses))
+    piscofins_ordenado = piscofins_df.copy()
+    piscofins_ordenado['Ordem'] = piscofins_ordenado['Mês'].map(ordem_meses)
+    piscofins_ordenado = piscofins_ordenado.sort_values(by="Ordem")
 
     # Relatório fixo no início
+    piscofins_filtrado = piscofins_ordenado[piscofins_ordenado['Mês'].isin(meses_selecionados)]
     credito_total = piscofins_filtrado['Crédito'].sum()
     debito_total = piscofins_filtrado['Débito'].sum()
     saldo_final = credito_total - debito_total
@@ -331,11 +333,33 @@ elif filtro_grafico == "📗 PIS e COFINS":
     fig_bar = px.bar(df_bar, x='Tipo', y='Valor', text_auto='.2s', color='Tipo', title="Créditos x Débitos no Período")
     st.plotly_chart(fig_bar, use_container_width=True)
 
-    # Gráfico de linha do saldo (usando a coluna Saldo da tabela)
-    df_saldo = piscofins_filtrado.copy()
-    df_saldo = df_saldo.sort_values(by="Mês", key=lambda x: x.map(ordem_meses))
+    # Gráfico de linha do saldo acumulado
+    pontos = []
+    if len(meses_selecionados) == 1:
+        mes_nome = meses_selecionados[0]
+        mes_num = ordem_meses[mes_nome]
+
+        # Saldo anterior: último saldo do mês anterior (se existir)
+        saldo_anterior = piscofins_ordenado[piscofins_ordenado['Ordem'] < mes_num]['Saldo']
+        saldo_anterior = saldo_anterior.iloc[-1] if not saldo_anterior.empty else 0
+        pontos.append({'Mês': f"{mes_nome} - Início", 'Saldo': saldo_anterior})
+
+        # Saldo final do mês selecionado
+        saldo_fim = piscofins_ordenado[piscofins_ordenado['Ordem'] == mes_num]['Saldo']
+        saldo_fim = saldo_fim.iloc[-1] if not saldo_fim.empty else saldo_anterior
+        pontos.append({'Mês': f"{mes_nome} - Fim", 'Saldo': saldo_fim})
+
+    else:
+        # Trimestre: 1 ponto por saldo final de cada mês
+        for mes_nome in meses_selecionados:
+            saldo_fim = piscofins_ordenado[piscofins_ordenado['Mês'] == mes_nome]['Saldo']
+            if saldo_fim.empty:
+                continue
+            pontos.append({'Mês': mes_nome, 'Saldo': saldo_fim.iloc[-1]})
+
+    df_pontos = pd.DataFrame(pontos)
     fig_saldo_pis = px.line(
-        df_saldo, x='Mês', y='Saldo',
+        df_pontos, x='Mês', y='Saldo',
         title='Evolução Mensal do Saldo Acumulado - PIS e COFINS',
         markers=True
     )
