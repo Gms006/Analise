@@ -32,8 +32,9 @@ for df in [entradas, saidas]:
 # ========== LEITURA DA PLANILHA CONTABILIDADE ==========
 planilha_contabil = pd.read_excel("Contabilidade.xlsx", sheet_name=None)
 caixa_df = planilha_contabil['Caixa']
-pis_df = planilha_contabil['PIS']
-cofins_df = planilha_contabil['COFINS']
+
+# Ajuste: agora só existe uma aba PIS/COFINS unificada
+pis_cofins_df = planilha_contabil['PIS/COFINS']  # Certifique-se que o nome da aba está correto
 dre_df = planilha_contabil['DRE 1º Trimestre']
 
 # ========== FILTROS DINÂMICOS ==========
@@ -263,9 +264,9 @@ elif filtro_grafico == "📗 PIS":
     st.subheader("📗 Apuração PIS/COFINS")
 
     # Garantindo tipos corretos e limpeza de dados
-    pis_df['Crédito'] = pd.to_numeric(pis_df['Crédito'], errors='coerce').fillna(0)
-    pis_df['Débito'] = pd.to_numeric(pis_df['Débito'], errors='coerce').fillna(0)
-    pis_df['Saldo'] = pis_df['Crédito'] - pis_df['Débito']
+    pis_cofins_df['Crédito'] = pd.to_numeric(pis_cofins_df['Crédito'], errors='coerce').fillna(0)
+    pis_cofins_df['Débito'] = pd.to_numeric(pis_cofins_df['Débito'], errors='coerce').fillna(0)
+    pis_cofins_df['Saldo'] = pis_cofins_df['Crédito'] - pis_cofins_df['Débito']
 
     # Filtragem dinâmica dos períodos
     meses_filtro = {
@@ -276,22 +277,22 @@ elif filtro_grafico == "📗 PIS":
     }
 
     meses_selecionados = meses_filtro[filtro_periodo]
-    pis_filtrado = pis_df[pis_df['Mês'].isin(meses_selecionados)]
+    pis_cofins_filtrado = pis_cofins_df[pis_cofins_df['Mês'].isin(meses_selecionados)]
 
     # Gráfico de barras Créditos vs Débitos
-    fig_pis = px.bar(pis_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
-                     title='Créditos vs Débitos PIS')
+    fig_pis = px.bar(pis_cofins_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
+                     title='Créditos vs Débitos PIS/COFINS')
     st.plotly_chart(fig_pis, use_container_width=True)
 
     # Gráfico de linha do Saldo acumulado
-    pis_filtrado['Saldo Acumulado'] = pis_filtrado['Saldo'].cumsum()
-    fig_saldo_pis = px.line(pis_filtrado, x='Mês', y='Saldo Acumulado',
-                            title='Saldo Acumulado PIS')
+    pis_cofins_filtrado['Saldo Acumulado'] = pis_cofins_filtrado['Saldo'].cumsum()
+    fig_saldo_pis = px.line(pis_cofins_filtrado, x='Mês', y='Saldo Acumulado',
+                            title='Saldo Acumulado PIS/COFINS')
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
 
-    # Cards de resumo financeiro para PIS
-    credito_total = pis_filtrado['Crédito'].sum()
-    debito_total = pis_filtrado['Débito'].sum()
+    # Cards de resumo financeiro para PIS/COFINS
+    credito_total = pis_cofins_filtrado['Crédito'].sum()
+    debito_total = pis_cofins_filtrado['Débito'].sum()
     saldo_final = credito_total - debito_total
 
     col1, col2, col3 = st.columns(3)
@@ -300,17 +301,17 @@ elif filtro_grafico == "📗 PIS":
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
 
     # Tabela detalhada
-    st.subheader("📋 Tabela Detalhada PIS")
-    st.dataframe(pis_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
+    st.subheader("📋 Tabela Detalhada PIS/COFINS")
+    st.dataframe(pis_cofins_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
                  use_container_width=True)
 
 elif filtro_grafico == "📙 COFINS":
     st.subheader("📙 Apuração COFINS")
 
     # Garantindo tipos corretos e limpeza de dados
-    cofins_df['Crédito'] = pd.to_numeric(cofins_df['Crédito'], errors='coerce').fillna(0)
-    cofins_df['Débito'] = pd.to_numeric(cofins_df['Débito'], errors='coerce').fillna(0)
-    cofins_df['Saldo'] = cofins_df['Crédito'] - cofins_df['Débito']
+    pis_cofins_df['Crédito'] = pd.to_numeric(pis_cofins_df['Crédito'], errors='coerce').fillna(0)
+    pis_cofins_df['Débito'] = pd.to_numeric(pis_cofins_df['Débito'], errors='coerce').fillna(0)
+    pis_cofins_df['Saldo'] = pis_cofins_df['Crédito'] - pis_cofins_df['Débito']
 
     # Filtragem dinâmica dos períodos
     meses_filtro = {
@@ -321,22 +322,22 @@ elif filtro_grafico == "📙 COFINS":
     }
 
     meses_selecionados = meses_filtro[filtro_periodo]
-    cofins_filtrado = cofins_df[cofins_df['Mês'].isin(meses_selecionados)]
+    pis_cofins_filtrado = pis_cofins_df[pis_cofins_df['Mês'].isin(meses_selecionados)]
 
     # Gráfico de barras Créditos vs Débitos
-    fig_cofins = px.bar(cofins_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
+    fig_cofins = px.bar(pis_cofins_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
                         title='Créditos vs Débitos COFINS')
     st.plotly_chart(fig_cofins, use_container_width=True)
 
     # Gráfico de linha do Saldo acumulado
-    cofins_filtrado['Saldo Acumulado'] = cofins_filtrado['Saldo'].cumsum()
-    fig_saldo_cofins = px.line(cofins_filtrado, x='Mês', y='Saldo Acumulado',
+    pis_cofins_filtrado['Saldo Acumulado'] = pis_cofins_filtrado['Saldo'].cumsum()
+    fig_saldo_cofins = px.line(pis_cofins_filtrado, x='Mês', y='Saldo Acumulado',
                                title='Saldo Acumulado COFINS')
     st.plotly_chart(fig_saldo_cofins, use_container_width=True)
 
     # Cards de resumo financeiro para COFINS
-    credito_total = cofins_filtrado['Crédito'].sum()
-    debito_total = cofins_filtrado['Débito'].sum()
+    credito_total = pis_cofins_filtrado['Crédito'].sum()
+    debito_total = pis_cofins_filtrado['Débito'].sum()
     saldo_final = credito_total - debito_total
 
     col1, col2, col3 = st.columns(3)
@@ -346,7 +347,7 @@ elif filtro_grafico == "📙 COFINS":
 
     # Tabela detalhada
     st.subheader("📋 Tabela Detalhada COFINS")
-    st.dataframe(cofins_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
+    st.dataframe(pis_cofins_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
                  use_container_width=True)
 
 elif filtro_grafico == "📘 DRE Trimestral":
@@ -385,8 +386,7 @@ def to_excel():
         comparativo_filtrado.to_excel(writer, sheet_name="Apuracao", index=False)
 
         caixa_df.to_excel(writer, sheet_name="Caixa", index=False)
-        pis_df.to_excel(writer, sheet_name="PIS", index=False)
-        cofins_df.to_excel(writer, sheet_name="COFINS", index=False)
+        pis_cofins_df.to_excel(writer, sheet_name="PIS/COFINS", index=False)
         dre_df.to_excel(writer, sheet_name="DRE", index=False)
     processed_data = output.getvalue()
     return processed_data
