@@ -73,10 +73,16 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
         if df_mes.empty:
             continue  # pula meses sem dados
 
-        ano = df_mes['Ano'].iloc[0]
+        ano = df_mes['Ano'].dropna().iloc[0] if not df_mes['Ano'].dropna().empty else None
+        if ano is None:
+            continue  # pula se não encontrar ano válido
 
-        # Saldo final do mês anterior
-        data_limite = pd.Timestamp(f"{ano}-{mes:02d}-01")
+        try:
+            data_limite = pd.Timestamp(f"{int(ano)}-{mes:02d}-01")
+        except Exception as e:
+            st.warning(f"Erro ao gerar data para o mês {mes} e ano {ano}: {e}")
+            continue
+
         df_ant = df[df['Data'] < data_limite]
 
         if not df_ant.empty:
