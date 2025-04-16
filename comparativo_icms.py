@@ -31,11 +31,12 @@ for df in [entradas, saidas]:
 
 # ========== LEITURA DA PLANILHA CONTABILIDADE ==========
 planilha_contabil = pd.read_excel("Contabilidade.xlsx", sheet_name=None)
-caixa_df = planilha_contabil['Caixa']
-
-# Ajuste: agora só existe uma aba PIS/COFINS unificada
-piscofins_df = planilha_contabil['PISCOFINS']  # Certifique-se que o nome da aba está correto
-dre_df = planilha_contabil['DRE 1º Trimestre']
+try:
+    caixa_df = planilha_contabil['Caixa']
+    piscofins_df = planilha_contabil['PISCOFINS']
+    dre_df = planilha_contabil['DRE 1º Trimestre']
+except KeyError as e:
+    st.error(f"Erro: Aba não encontrada - {e}")
 
 # ========== FILTROS DINÂMICOS ==========
 st.sidebar.header("🎛️ Filtros")
@@ -189,17 +190,14 @@ elif filtro_grafico == "Relatórios Detalhados":
 elif filtro_grafico == "📘 Contabilidade e Caixa":
     st.subheader("📘 Contabilidade e Caixa")
 
-    # Tratamento da coluna Data e valores
     caixa_df['Data'] = pd.to_datetime(caixa_df['Data'], errors='coerce')
     caixa_df['Mês'] = caixa_df['Data'].dt.month
     caixa_df['Ano'] = caixa_df['Data'].dt.year
 
-    # Agora as colunas corretas são: Data, Descricao, Entradas, Saídas, Saldo
-    caixa_df['Entrada'] = pd.to_numeric(caixa_df['Entradas'], errors='coerce').fillna(0)
-    caixa_df['Saída'] = pd.to_numeric(caixa_df['Saídas'], errors='coerce').fillna(0)
-    caixa_df['Valor Líquido'] = caixa_df['Entrada'] - caixa_df['Saída']
+    caixa_df['Entradas'] = pd.to_numeric(caixa_df['Entradas'], errors='coerce').fillna(0)
+    caixa_df['Saídas'] = pd.to_numeric(caixa_df['Saídas'], errors='coerce').fillna(0)
+    caixa_df['Valor Líquido'] = caixa_df['Entradas'] - caixa_df['Saídas']
 
-    # Filtrando os períodos dinamicamente
     periodos = {
         "Janeiro/2025": [1],
         "Fevereiro/2025": [2],
@@ -210,40 +208,32 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     meses_selecionados = periodos[filtro_periodo]
     caixa_filtrado = caixa_df[caixa_df['Mês'].isin(meses_selecionados)]
 
-    # Agrupamento mensal
     caixa_resumo = caixa_filtrado.groupby('Mês').agg({
-        'Entrada': 'sum',
-        'Saída': 'sum',
+        'Entradas': 'sum',
+        'Saídas': 'sum',
         'Valor Líquido': 'sum'
     }).reset_index()
 
-    # Cálculo do saldo acumulado
     caixa_resumo['Saldo Acumulado'] = caixa_resumo['Valor Líquido'].cumsum()
-
-    # Conversão numérica dos meses para nomes
     nomes_meses = {1:'Janeiro', 2:'Fevereiro', 3:'Março'}
     caixa_resumo['Mês'] = caixa_resumo['Mês'].map(nomes_meses)
 
-    # Gráfico de barras Entradas vs Saídas
-    fig = px.bar(caixa_resumo, x='Mês', y=['Entrada', 'Saída'], barmode='group',
+    fig = px.bar(caixa_resumo, x='Mês', y=['Entradas', 'Saídas'], barmode='group',
                  title="Entradas vs Saídas Mensais")
     st.plotly_chart(fig, use_container_width=True)
 
-    # Gráfico de linha Saldo Acumulado
     fig_saldo = px.line(caixa_resumo, x='Mês', y='Saldo Acumulado',
                         title='Saldo Acumulado Mensal')
     st.plotly_chart(fig_saldo, use_container_width=True)
 
-    # Gráfico Pizza por categoria (Descricao)
     if 'Descricao' in caixa_filtrado.columns:
         categoria_resumo = caixa_filtrado.groupby('Descricao')['Valor Líquido'].sum().reset_index()
         fig_categoria = px.pie(categoria_resumo, names='Descricao', values='Valor Líquido',
                                title='Distribuição de Gastos/Receitas por Categoria')
         st.plotly_chart(fig_categoria, use_container_width=True)
 
-    # Cards de resumo financeiro
-    receita_total = caixa_filtrado['Entrada'].sum()
-    despesa_total = caixa_filtrado['Saída'].sum()
+    receita_total = caixa_filtrado['Entradas'].sum()
+    despesa_total = caixa_filtrado['Saídas'].sum()
     saldo_final = receita_total - despesa_total
     margem = (saldo_final / receita_total * 100) if receita_total != 0 else 0
 
@@ -253,9 +243,8 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
     col4.metric("📌 Margem (%)", f"{margem:.2f}%")
 
-    # Tabela detalhada
     st.subheader("🗃️ Tabela Detalhada de Caixa")
-    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entrada', 'Saída', 'Valor Líquido']],
+    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entradas', 'Saídas', 'Valor Líquido']],
                  use_container_width=True)
 
 elif filtro_grafico == "📗 PIS e COFINS":
