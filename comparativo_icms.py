@@ -482,16 +482,50 @@ elif filtro_grafico == "📘 DRE Trimestral":
     bloco_visual(
         "Demonstração do Resultado do Exercício (DRE)",
         "file-contract",
-        "Veja o detalhamento da DRE do período selecionado, com receitas, custos, despesas e resultado final. <i class='fas fa-info-circle'></i>"
+        "Resumo do resultado do exercício, com receitas, deduções, custos, despesas e lucro/prejuízo final. <i class='fas fa-info-circle'></i>"
     )
-    st.markdown(
-        "<h3 style='color:#C89D4A;'><i class='fas fa-table'></i> Tabela DRE 1º Trimestre</h3>",
-        unsafe_allow_html=True
-    )
-    st.dataframe(
-        dre_df.style.format(precision=2, thousands=".", decimal=","),
-        use_container_width=True
-    )
+
+    # Extrai os principais valores da DRE
+    receita_bruta = dre_df.iloc[1,2]  # VENDA DE MERCADORIAS A VISTA
+    deducoes = dre_df.iloc[5,2]       # (-) ICMS + COFINS + PIS
+    receita_liquida = dre_df.iloc[6,2] # Total das Receitas Operacionais Líquidas
+    custo_mercadorias = dre_df.iloc[8,2] # COMPRA DE MERCADORIA P/REVENDA A VISTA
+    lucro_bruto = dre_df.iloc[12,2]   # Lucro e/ou Prejuízo Operacional Bruto
+    despesas = dre_df.iloc[13,2]      # Despesas Administrativas
+    resultado_operacional = dre_df.iloc[15,2] # Resultado Operacional
+    resultado_liquido = dre_df.iloc[19,2]     # Lucro/Prejuízo Líquido do Exercício
+
+    # Cards de destaque
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Receita Bruta", f"R$ {receita_bruta:,.2f}")
+    col2.metric("Receita Líquida", f"R$ {receita_liquida:,.2f}")
+    col3.metric("Lucro Bruto", f"R$ {lucro_bruto:,.2f}")
+    col4.metric("Resultado Líquido", f"R$ {resultado_liquido:,.2f}")
+
+    # DRE em formato hierárquico
+    st.markdown("""
+    <div style="background:#22304A; border-radius:10px; padding:20px; margin-top:20px;">
+    <ul style="list-style:none; padding-left:0; color:#C89D4A; font-size:18px;">
+      <li><b>Receita Operacional Bruta:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
+      <li style="margin-left:20px;">(-) Deduções (ICMS, COFINS, PIS): <span style="color:#fff;">R$ {:,.2f}</span></li>
+      <li><b>Receita Líquida:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
+      <li style="margin-left:20px;">(-) Custos das Mercadorias Vendidas: <span style="color:#fff;">R$ {:,.2f}</span></li>
+      <li><b>Lucro Bruto:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
+      <li style="margin-left:20px;">(-) Despesas Administrativas: <span style="color:#fff;">R$ {:,.2f}</span></li>
+      <li><b>Resultado Operacional:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
+      <li><b>Resultado Líquido do Exercício:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
+    </ul>
+    </div>
+    """.format(
+        receita_bruta,
+        deducoes,
+        receita_liquida,
+        custo_mercadorias,
+        lucro_bruto,
+        despesas,
+        resultado_operacional,
+        resultado_liquido
+    ), unsafe_allow_html=True)
 
 # =========================
 # 13. RODAPÉ INSTITUCIONAL
