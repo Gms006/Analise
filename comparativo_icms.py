@@ -229,45 +229,48 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
 
     # Gráficos e análises
     if len(meses_selecionados) == 1:
-        # Determina o saldo final do mês anterior como ponto de partida
+        # Gráfico de evolução decendial usando apenas a coluna Saldo, sem cálculos
         if 'Saldo' in caixa_ordenado.columns:
-            mes_atual = meses_selecionados[0]
-            saldo_anterior = caixa_ordenado[caixa_ordenado['Mês'] < mes_atual]['Saldo'].iloc[-1] if not caixa_ordenado[caixa_ordenado['Mês'] < mes_atual].empty else 0
+            caixa_mes = caixa_ordenado[caixa_ordenado['Mês'] == meses_selecionados[0]].copy()
+            caixa_mes['Dia'] = caixa_mes['Data'].dt.day
+            caixa_mes['Decêndio'] = ((caixa_mes['Dia'] - 1) // 10 + 1).clip(upper=3)
+            caixa_mes['Período'] = caixa_mes['Decêndio'].map({1: '1-10', 2: '11-20', 3: '21-31'})
+
+            # Pega o último valor do saldo de cada decêndio (sem fazer cálculo)
+            caixa_decendio = caixa_mes.sort_values('Data').groupby('Decêndio').tail(1)[['Período', 'Saldo']].reset_index(drop=True)
+
+            fig_saldo = px.line(
+                caixa_decendio, x='Período', y='Saldo',
+                title='Evolução do Saldo Acumulado - Caixa (10 em 10 dias)',
+                markers=True
+            )
+            st.plotly_chart(fig_saldo, use_container_width=True)
         else:
-            saldo_anterior = 0
+            # Fallback se não houver coluna Saldo
+            caixa_mes = caixa_ordenado[caixa_ordenado['Mês'] == meses_selecionados[0]].copy()
+            caixa_mes['Dia'] = caixa_mes['Data'].dt.day
+            caixa_mes['Decêndio'] = ((caixa_mes['Dia'] - 1) // 10 + 1).clip(upper=3)
+            caixa_mes['Período'] = caixa_mes['Decêndio'].map({1: '1-10', 2: '11-20', 3: '21-31'})
+            caixa_decendio = caixa_mes.groupby('Decêndio').agg({
+                'Entradas': 'sum',
+                'Saídas': 'sum',
+                'Valor Líquido': 'sum'
+            }).reset_index()
+            caixa_decendio['Saldo Acumulado'] = caixa_decendio['Valor Líquido'].cumsum()
 
-        caixa_mes = caixa_ordenado[caixa_ordenado['Mês'] == meses_selecionados[0]].copy()
-        caixa_mes['Dia'] = caixa_mes['Data'].dt.day
-        caixa_mes['Decêndio'] = ((caixa_mes['Dia'] - 1) // 10 + 1).clip(upper=3)
-        caixa_decendio = caixa_mes.groupby('Decêndio').agg({
-            'Entradas': 'sum',
-            'Saídas': 'sum',
-            'Valor Líquido': 'sum'
-        }).reset_index()
-        caixa_decendio['Período'] = caixa_decendio['Decêndio'].map({1: '1-10', 2: '11-20', 3: '21-31'})
-        # Evolução do saldo acumulado por decêndio com base no saldo anterior real
-        caixa_decendio['Saldo Acumulado'] = saldo_anterior + caixa_decendio['Valor Líquido'].cumsum()
-
-        fig = px.bar(caixa_decendio, x='Período', y=['Entradas', 'Saídas'], barmode='group',
-                     title="Entradas vs Saídas por Período (10 em 10 dias)")
-        st.plotly_chart(fig, use_container_width=True)
-
-        fig_saldo = px.line(
-            caixa_decendio, x='Período', y='Saldo Acumulado',
-            title='Evolução do Saldo Acumulado - Caixa (10 em 10 dias)',
-            markers=True
-        )
-        st.plotly_chart(fig_saldo, use_container_width=True)
+            fig_saldo = px.line(
+                caixa_decendio, x='Período', y='Saldo Acumulado',
+                title='Evolução do Saldo Acumulado - Caixa (10 em 10 dias)',
+                markers=True
+            )
+            st.plotly_chart(fig_saldo, use_container_width=True)
     else:
-        # Se existe a coluna 'Saldo', apenas exibe o saldo real do último dia de cada mês selecionado
+        # Gráfico trimestral usando apenas a coluna Saldo, sem cálculos
         if 'Saldo' in caixa_ordenado.columns:
-            caixa_saldo_real = caixa_ordenado[['Data', 'Mês', 'Saldo']].copy()
-            caixa_saldo_real = caixa_saldo_real.dropna(subset=['Saldo'])
-            caixa_saldo_real['Mês Nome'] = caixa_saldo_real['Mês'].map({1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'})
-            caixa_saldo_real = caixa_saldo_real.sort_values('Data')
-            caixa_saldo_real = caixa_saldo_real[caixa_saldo_real['Mês'].isin(meses_selecionados)]
-            # Pega apenas o último saldo de cada mês (último registro do mês)
-            caixa_saldo_final_mes = caixa_saldo_real.groupby('Mês').tail(1)
+            caixa_ordenado['Mês Nome'] = caixa_ordenado['Mês'].map({1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'})
+            caixa_mensal_saldo = caixa_ordenado.dropna(subset=['Saldo']).sort_values('Data')
+            caixa_saldo_final_mes = caixa_mensal_saldo.groupby('Mês').tail(1)
+            caixa_saldo_final_mes = caixa_saldo_final_mes[caixa_saldo_final_mes['Mês'].isin(meses_selecionados)]
 
             fig_saldo = px.line(
                 caixa_saldo_final_mes, x='Mês Nome', y='Saldo',
