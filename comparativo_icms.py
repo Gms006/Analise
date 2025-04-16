@@ -211,9 +211,11 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     caixa_df['Ano'] = caixa_df['Data'].dt.year
 
     meses_selecionados = periodos[filtro_periodo]
-    caixa_filtrado = caixa_df[caixa_df['Mês'].isin(meses_selecionados)]
+    # Para evolução correta do saldo, não filtre antes de calcular o saldo mensal!
+    caixa_ordenado = caixa_df.sort_values('Data').copy()
 
-    # Resumo financeiro no topo
+    # Resumo financeiro no topo (mantém filtrado)
+    caixa_filtrado = caixa_df[caixa_df['Mês'].isin(meses_selecionados)]
     receita_total = caixa_filtrado['Entradas'].sum()
     despesa_total = caixa_filtrado['Saídas'].sum()
     saldo_final = receita_total - despesa_total
@@ -228,15 +230,15 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     # Gráficos e análises
     if len(meses_selecionados) == 1:
         # Evolução de 10 em 10 dias do saldo acumulado no mês selecionado
-        caixa_filtrado = caixa_filtrado.sort_values('Data')
-        if 'Saldo' in caixa_filtrado.columns:
-            saldo_inicial = caixa_filtrado['Saldo'].iloc[0]
+        caixa_mes = caixa_ordenado[caixa_ordenado['Mês'] == meses_selecionados[0]].copy()
+        if 'Saldo' in caixa_mes.columns:
+            saldo_inicial = caixa_mes['Saldo'].iloc[0]
         else:
             saldo_inicial = 0
 
-        caixa_filtrado['Dia'] = caixa_filtrado['Data'].dt.day
-        caixa_filtrado['Decêndio'] = ((caixa_filtrado['Dia'] - 1) // 10 + 1).clip(upper=3)
-        caixa_decendio = caixa_filtrado.groupby('Decêndio').agg({
+        caixa_mes['Dia'] = caixa_mes['Data'].dt.day
+        caixa_mes['Decêndio'] = ((caixa_mes['Dia'] - 1) // 10 + 1).clip(upper=3)
+        caixa_decendio = caixa_mes.groupby('Decêndio').agg({
             'Entradas': 'sum',
             'Saídas': 'sum',
             'Valor Líquido': 'sum'
@@ -256,11 +258,11 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
         st.plotly_chart(fig_saldo, use_container_width=True)
     else:
         # Evolução mensal do saldo acumulado levando em conta o saldo anterior real da planilha
-        caixa_filtrado = caixa_filtrado.sort_values('Data')
-        if 'Saldo' in caixa_filtrado.columns:
-            # Pega o último saldo de cada mês para evolução real
-            caixa_filtrado['Mês Nome'] = caixa_filtrado['Mês'].map({1:'Janeiro', 2:'Fevereiro', 3:'Março'})
-            caixa_mes = caixa_filtrado.groupby(['Mês', 'Mês Nome']).agg({'Saldo': 'last'}).reset_index()
+        if 'Saldo' in caixa_ordenado.columns:
+            # Pega o último saldo de cada mês, mas SEM FILTRAR antes, para manter a cadeia correta
+            caixa_ordenado['Mês Nome'] = caixa_ordenado['Mês'].map({1:'Janeiro', 2:'Fevereiro', 3:'Março'})
+            caixa_mes = caixa_ordenado.groupby(['Mês', 'Mês Nome']).agg({'Saldo': 'last'}).reset_index()
+            caixa_mes = caixa_mes[caixa_mes['Mês'].isin(meses_selecionados)]
             fig_saldo = px.line(
                 caixa_mes, x='Mês Nome', y='Saldo',
                 title='Evolução Mensal do Saldo Acumulado - Caixa',
