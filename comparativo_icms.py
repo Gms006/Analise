@@ -84,7 +84,7 @@ def set_background(path):
             background-position: top right;
             background-repeat: no-repeat;
             background-size: 300px;
-            background-attachment: fixed;
+            background-attachment: scroll;
             background-color: #1E2B3D;
         }}
         </style>
@@ -228,23 +228,15 @@ periodos = {
     "Março/2025": [3],
     "1º Trimestre/2025": [1, 2, 3]
 }
-filtro_periodo = st.sidebar.selectbox(
-    "📅 Período:",
-    ["Janeiro/2025", "Fevereiro/2025", "Março/2025", "1º Trimestre/2025"],
-    key="periodo"
-)
 filtro_grafico = st.sidebar.selectbox(
-    "Tipo de gráfico/relatório:",
+    "📘 Relatórios Contábeis:",
     [
-        "Mapa por UF",
-        "Comparativo de Crédito x Débito",
-        "Apuração com Crédito Acumulado",
-        "Relatórios Detalhados",
         "📘 Contabilidade e Caixa",
         "📗 PIS e COFINS",
         "📘 DRE Trimestral",
         "📑 Tabelas Contabilidade"
-    ]
+    ],
+    key="tipo_relatorio"
 )
 meses_filtrados = periodos[filtro_periodo]
 entradas_filtradas = entradas[entradas['Mês'].dt.month.isin(meses_filtrados)]
