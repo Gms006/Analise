@@ -330,29 +330,29 @@ elif filtro_grafico == "📗 PIS e COFINS":
         df_ordenado['Ordem'] = df_ordenado['Mês'].map(ordem_meses)
         df_ordenado = df_ordenado.sort_values(by="Ordem")
 
-        # Saldo anterior ao mês selecionado
-        saldo_anterior = df_ordenado[df_ordenado['Ordem'] < mes_num]['Saldo'].sum()
+        # Saldo anterior ao mês selecionado (invertido)
+        saldo_anterior = -df_ordenado[df_ordenado['Ordem'] < mes_num]['Saldo'].sum()
         pontos.append({'Mês': f"{mes_nome} - Início", 'Saldo Acumulado': saldo_anterior})
 
-        # Saldo final do mês
+        # Saldo final do mês (invertido)
         df_mes = df_ordenado[df_ordenado['Mês'] == mes_nome]
-        saldo_fim = saldo_anterior + df_mes['Saldo'].sum()
+        saldo_fim = saldo_anterior - df_mes['Saldo'].sum()
         pontos.append({'Mês': f"{mes_nome} - Fim", 'Saldo Acumulado': saldo_fim})
 
-    # Trimestre: mantém como está
+    # Trimestre: mantém como está, mas invertendo o sinal
     else:
         for mes_nome in meses_selecionados:
             df_mes = piscofins_df[piscofins_df['Mês'] == mes_nome]
             if df_mes.empty:
                 continue
-            saldo_fim = df_mes['Saldo'].iloc[-1]
+            saldo_fim = -df_mes['Saldo'].iloc[-1]
             pontos.append({'Mês': mes_nome, 'Saldo Acumulado': saldo_fim})
 
     # Gráfico
     df_pontos = pd.DataFrame(pontos)
     fig_saldo_pis = px.line(
         df_pontos, x='Mês', y='Saldo Acumulado',
-        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS',
+        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS (Crédito é positivo)',
         markers=True
     )
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
