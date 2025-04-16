@@ -343,11 +343,9 @@ def calcular_saldo_com_acumulado(df, meses_filtrados):
     df["Ano"] = df["Data"].dt.year
     df["Valor Líquido"] = df["Entradas"] - df["Saídas"]
 
-    # Saldo inicial: soma dos lançamentos anteriores ao primeiro mês filtrado
     primeiro_mes = min(meses_filtrados)
     saldo_anterior = df[df["Mês"] < primeiro_mes]["Valor Líquido"].sum()
 
-    # Filtra os meses desejados
     df_filtrado = df[df["Mês"].isin(meses_filtrados)].copy()
     df_filtrado["Saldo Acumulado"] = df_filtrado["Valor Líquido"].cumsum() + saldo_anterior
 
