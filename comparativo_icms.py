@@ -331,42 +331,12 @@ elif filtro_grafico == "📗 PIS e COFINS":
     fig_bar = px.bar(df_bar, x='Tipo', y='Valor', text_auto='.2s', color='Tipo', title="Créditos x Débitos no Período")
     st.plotly_chart(fig_bar, use_container_width=True)
 
-    # Gráfico de linha do PIS/COFINS
-    ordem_meses = {"Janeiro": 1, "Fevereiro": 2, "Março": 3}
-    pontos = []
-
-    # Se for apenas 1 mês (gráfico mensal)
-    if len(meses_selecionados) == 1:
-        mes_nome = meses_selecionados[0]
-        mes_num = ordem_meses[mes_nome]
-
-        df_ordenado = piscofins_df.copy()
-        df_ordenado['Ordem'] = df_ordenado['Mês'].map(ordem_meses)
-        df_ordenado = df_ordenado.sort_values(by="Ordem")
-
-        # Saldo anterior ao mês selecionado (invertido)
-        saldo_anterior = -df_ordenado[df_ordenado['Ordem'] < mes_num]['Saldo'].sum()
-        pontos.append({'Mês': f"{mes_nome} - Início", 'Saldo Acumulado': saldo_anterior})
-
-        # Saldo final do mês (invertido)
-        df_mes = df_ordenado[df_ordenado['Mês'] == mes_nome]
-        saldo_fim = saldo_anterior - df_mes['Saldo'].sum()
-        pontos.append({'Mês': f"{mes_nome} - Fim", 'Saldo Acumulado': saldo_fim})
-
-    # Trimestre: mantém como está, mas invertendo o sinal
-    else:
-        for mes_nome in meses_selecionados:
-            df_mes = piscofins_df[piscofins_df['Mês'] == mes_nome]
-            if df_mes.empty:
-                continue
-            saldo_fim = -df_mes['Saldo'].iloc[-1]
-            pontos.append({'Mês': mes_nome, 'Saldo Acumulado': saldo_fim})
-
-    # Gráfico
-    df_pontos = pd.DataFrame(pontos)
+    # Gráfico de linha do saldo (usando a coluna Saldo da tabela)
+    df_saldo = piscofins_filtrado.copy()
+    df_saldo = df_saldo.sort_values(by="Mês", key=lambda x: x.map(ordem_meses))
     fig_saldo_pis = px.line(
-        df_pontos, x='Mês', y='Saldo Acumulado',
-        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS (Crédito é positivo)',
+        df_saldo, x='Mês', y='Saldo',
+        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS',
         markers=True
     )
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
