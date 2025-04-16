@@ -291,6 +291,12 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
     col4.metric("📌 Margem (%)", f"{margem:.2f}%")
 
+    # Gráfico de barras de Entradas e Saídas no período
+    df_bar = caixa_filtrado[['Entradas', 'Saídas']].sum().reset_index()
+    df_bar.columns = ['Tipo', 'Valor']
+    fig_bar = px.bar(df_bar, x='Tipo', y='Valor', text_auto='.2s', color='Tipo', title="Entradas x Saídas no Período")
+    st.plotly_chart(fig_bar, use_container_width=True)
+
     plotar_saldo_mensal(caixa_df, meses_selecionados)
 
 elif filtro_grafico == "📗 PIS e COFINS":
@@ -316,6 +322,14 @@ elif filtro_grafico == "📗 PIS e COFINS":
     col1.metric("💳 Total Créditos", f"R$ {credito_total:,.2f}")
     col2.metric("📌 Total Débitos", f"R$ {debito_total:,.2f}")
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
+
+    # Gráfico de barras de Créditos e Débitos no período
+    df_bar = pd.DataFrame({
+        'Tipo': ['Crédito', 'Débito'],
+        'Valor': [credito_total, debito_total]
+    })
+    fig_bar = px.bar(df_bar, x='Tipo', y='Valor', text_auto='.2s', color='Tipo', title="Créditos x Débitos no Período")
+    st.plotly_chart(fig_bar, use_container_width=True)
 
     # Gráfico de linha do PIS/COFINS
     ordem_meses = {"Janeiro": 1, "Fevereiro": 2, "Março": 3}
