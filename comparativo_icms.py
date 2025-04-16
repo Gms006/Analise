@@ -133,7 +133,8 @@ else:
     filtro_grafico = st.sidebar.selectbox("Tipo de gráfico Contabilidade:", [
         "📘 Contabilidade e Caixa",
         "📗 PIS e COFINS",
-        "📘 DRE Trimestral"
+        "📘 DRE Trimestral",
+        "📑 Tabelas Contabilidade"  # Nova opção
     ])
 
 meses_filtrados = periodos[filtro_periodo]
@@ -363,6 +364,18 @@ elif filtro_grafico == "📘 DRE Trimestral":
         st.error(f"❌ Prejuízo apurado no período: R$ {abs(resultado):,.2f}")
     else:
         st.success(f"✅ Lucro apurado no período: R$ {resultado:,.2f}")
+
+elif filtro_grafico == "📑 Tabelas Contabilidade":
+    st.subheader("📑 Todas as Tabelas de Contabilidade")
+
+    st.markdown("### Caixa")
+    st.dataframe(caixa_df, use_container_width=True)
+
+    st.markdown("### PIS e COFINS")
+    st.dataframe(piscofins_df, use_container_width=True)
+
+    st.markdown("### DRE 1º Trimestre")
+    st.dataframe(dre_df, use_container_width=True)
 
 def to_excel():
     output = BytesIO()
