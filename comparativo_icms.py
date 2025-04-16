@@ -277,8 +277,36 @@ uf_cores = {uf: palette[i % len(palette)] for i, uf in enumerate(ufs)}
 aliq_cores = {0: '#636EFA', 4: '#EF553B', 7: '#00CC96', 12: '#AB63FA', 19: '#FFA15A'}
 
 # =========================
+# =========================
 # 11. GRÁFICOS E RELATÓRIOS
 # =========================
+# === CATEGORIAS DE RELATÓRIOS ===
+aba = st.sidebar.radio(
+    "📁 Tipo de Relatório:",
+    ["📂 Fiscal", "📊 Contábil"]
+)
+
+# === OPÇÕES DINÂMICAS DEPENDENDO DA CATEGORIA ===
+if aba == "📂 Fiscal":
+    filtro_grafico = st.sidebar.selectbox(
+        "📄 Relatórios Fiscais:",
+        [
+            "Mapa por UF",
+            "Comparativo de Crédito x Débito",
+            "Apuração com Crédito Acumulado",
+            "Relatórios Detalhados"
+        ]
+    )
+else:
+    filtro_grafico = st.sidebar.selectbox(
+        "📘 Relatórios Contábeis:",
+        [
+            "📘 Contabilidade e Caixa",
+            "📗 PIS e COFINS",
+            "📘 DRE Trimestral",
+            "📑 Tabelas Contabilidade"
+        ]
+    )
 
 if filtro_grafico == "Mapa por UF":
     bloco_visual(
@@ -343,37 +371,6 @@ elif filtro_grafico == "Comparativo de Crédito x Débito":
         st.plotly_chart(fig_pie_credito, use_container_width=True)
     with col4:
         st.plotly_chart(fig_pie_debito, use_container_width=True)
-
-# =========================
-# 12. BOTÃO DE DOWNLOAD GLOBAL
-# =========================
-# === CATEGORIAS DE RELATÓRIOS ===
-aba = st.sidebar.radio(
-    "📁 Tipo de Relatório:",
-    ["📂 Fiscal", "📊 Contábil"]
-)
-
-# === OPÇÕES DINÂMICAS DEPENDENDO DA CATEGORIA ===
-if aba == "📂 Fiscal":
-    filtro_grafico = st.sidebar.selectbox(
-        "📄 Relatórios Fiscais:",
-        [
-            "Mapa por UF",
-            "Comparativo de Crédito x Débito",
-            "Apuração com Crédito Acumulado",
-            "Relatórios Detalhados"
-        ]
-    )
-else:
-    filtro_grafico = st.sidebar.selectbox(
-        "📘 Relatórios Contábeis:",
-        [
-            "📘 Contabilidade e Caixa",
-            "📗 PIS e COFINS",
-            "📘 DRE Trimestral",
-            "📑 Tabelas Contabilidade"
-        ]
-    )
 
 elif filtro_grafico == "Relatórios Detalhados":
     bloco_visual(
@@ -491,38 +488,11 @@ elif filtro_grafico == "📗 PIS e COFINS":
     fig_saldo_pis = px.line(
         df_pontos, x='Mês', y='Saldo',
         title='Evolução do Saldo Acumulado - PIS e COFINS',
-        markers=True
-    )
-    st.plotly_chart(fig_saldo_pis, use_container_width=True)
-
-elif filtro_grafico == "📘 DRE Trimestral":
-    bloco_visual(
-        "Demonstrativo de Resultado do Exercício (DRE)",
-        "file-alt",
-        "Veja a tabela completa do DRE do 1º trimestre. <i class='fas fa-info-circle'></i>"
-    )
-    dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
-    dre_total = dre_df.groupby('Descrição')['Valor'].sum().reset_index()
-    st.markdown("<h3><i class='fas fa-table'></i> Tabela Completa DRE</h3>", unsafe_allow_html=True)
-    st.dataframe(dre_df, use_container_width=True)
-
-elif filtro_grafico == "📑 Tabelas Contabilidade":
-    bloco_visual(
-        "Todas as Tabelas Contábeis",
-        "table",
-        "Visualize todas as tabelas contábeis importadas do sistema. <i class='fas fa-info-circle'></i>"
-    )
-    st.markdown("<h3><i class='fas fa-cash-register'></i> Caixa</h3>", unsafe_allow_html=True)
-    st.dataframe(caixa_df, use_container_width=True)
-    st.markdown("<h3><i class='fas fa-file-invoice-dollar'></i> PIS e COFINS</h3>", unsafe_allow_html=True)
-    st.dataframe(piscofins_df, use_container_width=True)
-    st.markdown("<h3><i class='fas fa-file-alt'></i> DRE 1º Trimestre</h3>", unsafe_allow_html=True)
-    st.dataframe(dre_df, use_container_width=True)
-
 # =========================
 # 12. BOTÃO DE DOWNLOAD GLOBAL
 # =========================
-# === CATEGORIAS DE RELATÓRIOS ===
+def to_excel():
+    output = BytesIO()
 aba = st.sidebar.radio(
     "📁 Tipo de Relatório:",
     ["📂 Fiscal", "📊 Contábil"]
