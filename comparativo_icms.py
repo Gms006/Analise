@@ -69,35 +69,36 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
     pontos = []
 
     for mes in meses_selecionados:
-        ano = df[df['Mês'] == mes]['Ano'].iloc[0] if not df[df['Mês'] == mes].empty else None
-        if ano is None:
-            continue
+        df_mes = df[df['Mês'] == mes]
+        if df_mes.empty:
+            continue  # pula meses sem dados
+
+        ano = df_mes['Ano'].iloc[0]
 
         # Saldo final do mês anterior
-        # Saldo final do mês anterior
-        df_ant = df[(df['Ano'] == ano) & (df['Mês'] == (mes - 1))]
+        data_limite = pd.Timestamp(f"{ano}-{mes:02d}-01")
+        df_ant = df[df['Data'] < data_limite]
+
         if not df_ant.empty:
-            saldo_ant = df_ant['Valor Líquido'].cumsum().iloc[-1]
+            saldo_ant = df_ant['Valor Líquido'].sum()
             data_ant = df_ant['Data'].iloc[-1]
         else:
-            data_limite = pd.Timestamp(f"{ano}-{mes:02d}-01")
-            saldo_ant = df[df['Data'] < data_limite]['Valor Líquido'].sum()
+            saldo_ant = 0
             data_ant = data_limite - pd.Timedelta(days=1)
+
         pontos.append({'Data': data_ant, 'Saldo Acumulado': saldo_ant, 'Mês': mes})
 
         # Saldo no dia 15 do mês
         data_15 = pd.Timestamp(f"{ano}-{mes:02d}-15")
-        df_mes = df[(df['Ano'] == ano) & (df['Mês'] == mes) & (df['Data'] <= data_15)]
-        if not df_mes.empty:
-            saldo_15 = df_mes['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
+        df_mes_15 = df_mes[df_mes['Data'] <= data_15]
+        if not df_mes_15.empty:
+            saldo_15 = df_mes_15['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
             pontos.append({'Data': data_15, 'Saldo Acumulado': saldo_15, 'Mês': mes})
 
         # Saldo final do mês
-        df_mes_full = df[(df['Ano'] == ano) & (df['Mês'] == mes)]
-        if not df_mes_full.empty:
-            saldo_fim = df_mes_full['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
-            data_fim = df_mes_full['Data'].iloc[-1]
-            pontos.append({'Data': data_fim, 'Saldo Acumulado': saldo_fim, 'Mês': mes})
+        saldo_fim = df_mes['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
+        data_fim = df_mes['Data'].iloc[-1]
+        pontos.append({'Data': data_fim, 'Saldo Acumulado': saldo_fim, 'Mês': mes})
 
     # Para trimestre: apenas saldo final de cada mês
     if len(meses_selecionados) > 1:
