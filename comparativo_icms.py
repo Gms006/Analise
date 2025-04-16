@@ -229,9 +229,8 @@ periodos = {
     "1º Trimestre/2025": [1, 2, 3]
 }
 filtro_periodo = st.sidebar.selectbox(
-    "Período:",
-    list(periodos.keys()),
-    format_func=lambda x: f"<i class='fas fa-calendar-alt'></i> {x}",
+    "📅 Período:",
+    ["Janeiro/2025", "Fevereiro/2025", "Março/2025", "1º Trimestre/2025"],
     key="periodo"
 )
 filtro_grafico = st.sidebar.selectbox(
@@ -493,6 +492,7 @@ elif filtro_grafico == "📑 Tabelas Contabilidade":
 # 12. BOTÃO DE DOWNLOAD GLOBAL
 # =========================
 def to_excel():
+def to_excel():
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         entradas_filtradas.to_excel(writer, sheet_name="Entradas", index=False)
@@ -503,44 +503,6 @@ def to_excel():
         dre_df.to_excel(writer, sheet_name="DRE", index=False)
     processed_data = output.getvalue()
     return processed_data
-    # Título com Font Awesome
-    st.sidebar.markdown("""
-    <h4 style="color:#C89D4A;">
-        <i class="fas fa-calendar-alt"></i> Período
-    </h4>
-    """, unsafe_allow_html=True)
-
-    # Opções com emoji (renderizam corretamente no selectbox)
-    # TÍTULO COM ÍCONE (renderizado corretamente)
-    st.sidebar.markdown("""
-    <h4 style="color:#C89D4A; margin-bottom: 0.3em;">
-        <i class="fas fa-calendar-alt"></i> Período
-    </h4>
-    """, unsafe_allow_html=True)
-
-    # SELECTBOX COM EMOJIS (funciona perfeitamente)
-    opcoes_periodo = {
-        "📅 Janeiro/2025": [1],
-        "📅 Fevereiro/2025": [2],
-        "📅 Março/2025": [3],
-        "📅 1º Trimestre/2025": [1, 2, 3]
-    }
-    selecao = st.sidebar.selectbox("", list(opcoes_periodo.keys()))
-    meses_filtrados = opcoes_periodo[selecao]
-    filtro_periodo = st.sidebar.selectbox(
-        "",
-        list(periodos.keys()),
-        key="periodo"
-    )
-
-    excel_bytes = to_excel()
-st.download_button(
-    label="⬇️ Baixar Relatórios Completos (.xlsx)",
-    data=excel_bytes,
-    file_name="Relatorio_ICMS_Completo.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-
 # =========================
 # 13. RODAPÉ INSTITUCIONAL
 # =========================
