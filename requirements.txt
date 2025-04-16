@@ -1,9 +1,14 @@
+```txt
+# Bibliotecas principais com versões fixas (garante compatibilidade)
+
 pandas==2.2.1
 streamlit==1.32.2
 plotly==5.20.0
-pandas
-streamlit
-plotly
+
+# Leitura e escrita de Excel
 openpyxl
 xlsxwriter
+
+# Extras visuais para Streamlit (componentes como containers estilizados, etc.)
 streamlit-extras
+```
