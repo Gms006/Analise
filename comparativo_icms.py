@@ -236,8 +236,9 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
             caixa_mes['Decêndio'] = ((caixa_mes['Dia'] - 1) // 10 + 1).clip(upper=3)
             caixa_mes['Período'] = caixa_mes['Decêndio'].map({1: '1-10', 2: '11-20', 3: '21-31'})
 
-            # Pega o último valor do saldo de cada decêndio (sem fazer cálculo)
-            caixa_decendio = caixa_mes.sort_values('Data').groupby('Decêndio').tail(1)[['Período', 'Saldo']].reset_index(drop=True)
+            # Pega o último saldo de cada decêndio do mês selecionado
+            caixa_decendio = caixa_mes.dropna(subset=['Saldo']).sort_values('Data').groupby('Decêndio').tail(1)
+            caixa_decendio = caixa_decendio[['Período', 'Saldo', 'Data']].reset_index(drop=True)
 
             fig_saldo = px.line(
                 caixa_decendio, x='Período', y='Saldo',
@@ -245,6 +246,15 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
                 markers=True
             )
             st.plotly_chart(fig_saldo, use_container_width=True)
+
+            # Exibe também o saldo inicial do mês, se desejar:
+            saldo_anterior = None
+            # Busca o saldo do último dia do mês anterior, se existir
+            data_inicio = caixa_mes['Data'].min()
+            caixa_anterior = caixa_ordenado[caixa_ordenado['Data'] < data_inicio]
+            if not caixa_anterior.empty:
+                saldo_anterior = caixa_anterior.dropna(subset=['Saldo']).sort_values('Data').iloc[-1]['Saldo']
+                st.info(f"Saldo inicial do mês: R$ {saldo_anterior:,.2f}")
         else:
             # Fallback se não houver coluna Saldo
             caixa_mes = caixa_ordenado[caixa_ordenado['Mês'] == meses_selecionados[0]].copy()
