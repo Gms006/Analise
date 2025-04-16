@@ -317,13 +317,12 @@ elif filtro_grafico == "📗 PIS e COFINS":
     col2.metric("📌 Total Débitos", f"R$ {debito_total:,.2f}")
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
 
-    # Gráfico: apenas saldo final de cada mês (igual ao trimestre do caixa)
+    # Gráfico de linha: apenas saldo final de cada mês (igual ao trimestre do caixa)
     pontos = []
     for mes_nome in meses_selecionados:
         df_mes = piscofins_filtrado[piscofins_filtrado['Mês'] == mes_nome]
         if df_mes.empty:
             continue
-        data_fim = df_mes.index[-1]
         saldo_fim = df_mes['Saldo'].iloc[-1]
         pontos.append({'Mês': mes_nome, 'Saldo Acumulado': saldo_fim})
 
@@ -334,6 +333,20 @@ elif filtro_grafico == "📗 PIS e COFINS":
         markers=True
     )
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
+
+    # MANTENHA AQUI OS GRÁFICOS DE BARRA E PIZZA ORIGINAIS, por exemplo:
+    if 'Crédito' in piscofins_filtrado.columns and 'Débito' in piscofins_filtrado.columns:
+        fig_bar = px.bar(
+            piscofins_filtrado, x='Mês', y=['Crédito', 'Débito'],
+            barmode='group', title='Crédito x Débito por Mês'
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+        fig_pie = px.pie(
+            piscofins_filtrado, names='Mês', values='Crédito',
+            title='Distribuição dos Créditos por Mês'
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
 
 elif filtro_grafico == "📘 DRE Trimestral":
     st.subheader("📘 DRE Trimestral")
