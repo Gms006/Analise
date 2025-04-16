@@ -6,3 +6,4 @@ streamlit
 plotly
 openpyxl
 xlsxwriter
+streamlit-extras
