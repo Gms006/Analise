@@ -293,12 +293,6 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
 
     plotar_saldo_mensal(caixa_df, meses_selecionados)
 
-    if 'Descricao' in caixa_filtrado.columns:
-        categoria_resumo = caixa_filtrado.groupby('Descricao')['Valor Líquido'].sum().reset_index()
-        fig_categoria = px.pie(categoria_resumo, names='Descricao', values='Valor Líquido',
-                               title='Distribuição de Gastos/Receitas por Categoria')
-        st.plotly_chart(fig_categoria, use_container_width=True)
-
     st.subheader("🗃️ Tabela Detalhada de Caixa")
     st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entradas', 'Saídas', 'Valor Líquido', 'Saldo Acumulado']],
                  use_container_width=True)
