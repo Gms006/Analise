@@ -71,7 +71,7 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
     for mes in meses_selecionados:
         df_mes = df[df['Mês'] == mes]
         if df_mes.empty:
-            continue  # pula meses sem dados
+            continue  # pula mês sem dados
 
         ano = df_mes['Ano'].dropna().iloc[0] if not df_mes['Ano'].dropna().empty else None
         if ano is None:
@@ -95,7 +95,7 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
         pontos.append({'Data': data_ant, 'Saldo Acumulado': saldo_ant, 'Mês': mes})
 
         # Saldo no dia 15 do mês
-        data_15 = pd.Timestamp(f"{ano}-{mes:02d}-15")
+        data_15 = pd.Timestamp(f"{int(ano)}-{mes:02d}-15")
         df_mes_15 = df_mes[df_mes['Data'] <= data_15]
         if not df_mes_15.empty:
             saldo_15 = df_mes_15['Valor Líquido'].cumsum().iloc[-1] + saldo_ant
