@@ -511,12 +511,22 @@ def to_excel():
     """, unsafe_allow_html=True)
 
     # Opções com emoji (renderizam corretamente no selectbox)
-    periodos = {
+    # TÍTULO COM ÍCONE (renderizado corretamente)
+    st.sidebar.markdown("""
+    <h4 style="color:#C89D4A; margin-bottom: 0.3em;">
+        <i class="fas fa-calendar-alt"></i> Período
+    </h4>
+    """, unsafe_allow_html=True)
+
+    # SELECTBOX COM EMOJIS (funciona perfeitamente)
+    opcoes_periodo = {
         "📅 Janeiro/2025": [1],
         "📅 Fevereiro/2025": [2],
         "📅 Março/2025": [3],
         "📅 1º Trimestre/2025": [1, 2, 3]
     }
+    selecao = st.sidebar.selectbox("", list(opcoes_periodo.keys()))
+    meses_filtrados = opcoes_periodo[selecao]
     filtro_periodo = st.sidebar.selectbox(
         "",
         list(periodos.keys()),
