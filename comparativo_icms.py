@@ -249,22 +249,22 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
         )
         st.plotly_chart(fig_saldo, use_container_width=True)
     else:
-        # Evolução mensal do saldo acumulado no trimestre
+        # Evolução mensal do saldo acumulado levando em conta o saldo anterior
         caixa_resumo = caixa_filtrado.groupby('Mês').agg({
             'Entradas': 'sum',
             'Saídas': 'sum',
             'Valor Líquido': 'sum'
-        }).reset_index()
+        }).reset_index().sort_values('Mês')
         caixa_resumo['Saldo Acumulado'] = caixa_resumo['Valor Líquido'].cumsum()
         nomes_meses = {1:'Janeiro', 2:'Fevereiro', 3:'Março'}
-        caixa_resumo['Mês'] = caixa_resumo['Mês'].map(nomes_meses)
+        caixa_resumo['Mês Nome'] = caixa_resumo['Mês'].map(nomes_meses)
 
-        fig = px.bar(caixa_resumo, x='Mês', y=['Entradas', 'Saídas'], barmode='group',
+        fig = px.bar(caixa_resumo, x='Mês Nome', y=['Entradas', 'Saídas'], barmode='group',
                      title="Entradas vs Saídas Mensais")
         st.plotly_chart(fig, use_container_width=True)
 
         fig_saldo = px.line(
-            caixa_resumo, x='Mês', y='Saldo Acumulado',
+            caixa_resumo, x='Mês Nome', y='Saldo Acumulado',
             title='Evolução Mensal do Saldo Acumulado - Caixa',
             markers=True
         )
