@@ -213,38 +213,7 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     meses_selecionados = periodos[filtro_periodo]
     caixa_filtrado = caixa_df[caixa_df['Mês'].isin(meses_selecionados)]
 
-    # Tabela detalhada PRIMEIRO
-    st.subheader("🗃️ Tabela Detalhada de Caixa")
-    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entradas', 'Saídas', 'Valor Líquido']],
-                 use_container_width=True)
-
-    caixa_resumo = caixa_filtrado.groupby('Mês').agg({
-        'Entradas': 'sum',
-        'Saídas': 'sum',
-        'Valor Líquido': 'sum'
-    }).reset_index()
-
-    caixa_resumo['Saldo Acumulado'] = caixa_resumo['Valor Líquido'].cumsum()
-    nomes_meses = {1:'Janeiro', 2:'Fevereiro', 3:'Março'}
-    caixa_resumo['Mês'] = caixa_resumo['Mês'].map(nomes_meses)
-
-    fig = px.bar(caixa_resumo, x='Mês', y=['Entradas', 'Saídas'], barmode='group',
-                 title="Entradas vs Saídas Mensais")
-    st.plotly_chart(fig, use_container_width=True)
-
-    fig_saldo = px.line(
-        caixa_resumo, x='Mês', y='Saldo Acumulado',
-        title='Evolução Mensal do Saldo Acumulado - Caixa',
-        markers=True
-    )
-    st.plotly_chart(fig_saldo, use_container_width=True)
-
-    if 'Descricao' in caixa_filtrado.columns:
-        categoria_resumo = caixa_filtrado.groupby('Descricao')['Valor Líquido'].sum().reset_index()
-        fig_categoria = px.pie(categoria_resumo, names='Descricao', values='Valor Líquido',
-                               title='Distribuição de Gastos/Receitas por Categoria')
-        st.plotly_chart(fig_categoria, use_container_width=True)
-
+    # Resumo financeiro no topo
     receita_total = caixa_filtrado['Entradas'].sum()
     despesa_total = caixa_filtrado['Saídas'].sum()
     saldo_final = receita_total - despesa_total
@@ -255,6 +224,62 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     col2.metric("📉 Despesa Total", f"R$ {despesa_total:,.2f}")
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
     col4.metric("📌 Margem (%)", f"{margem:.2f}%")
+
+    # Gráficos e análises
+    if len(meses_selecionados) == 1:
+        # Evolução de 10 em 10 dias do saldo acumulado no mês selecionado
+        caixa_filtrado['Dia'] = caixa_filtrado['Data'].dt.day
+        caixa_filtrado['Decêndio'] = ((caixa_filtrado['Dia'] - 1) // 10 + 1).clip(upper=3)
+        caixa_decendio = caixa_filtrado.groupby('Decêndio').agg({
+            'Entradas': 'sum',
+            'Saídas': 'sum',
+            'Valor Líquido': 'sum'
+        }).reset_index()
+        caixa_decendio['Saldo Acumulado'] = caixa_decendio['Valor Líquido'].cumsum()
+        caixa_decendio['Período'] = caixa_decendio['Decêndio'].map({1: '1-10', 2: '11-20', 3: '21-31'})
+
+        fig = px.bar(caixa_decendio, x='Período', y=['Entradas', 'Saídas'], barmode='group',
+                     title="Entradas vs Saídas por Período (10 em 10 dias)")
+        st.plotly_chart(fig, use_container_width=True)
+
+        fig_saldo = px.line(
+            caixa_decendio, x='Período', y='Saldo Acumulado',
+            title='Evolução do Saldo Acumulado - Caixa (10 em 10 dias)',
+            markers=True
+        )
+        st.plotly_chart(fig_saldo, use_container_width=True)
+    else:
+        # Evolução mensal do saldo acumulado no trimestre
+        caixa_resumo = caixa_filtrado.groupby('Mês').agg({
+            'Entradas': 'sum',
+            'Saídas': 'sum',
+            'Valor Líquido': 'sum'
+        }).reset_index()
+        caixa_resumo['Saldo Acumulado'] = caixa_resumo['Valor Líquido'].cumsum()
+        nomes_meses = {1:'Janeiro', 2:'Fevereiro', 3:'Março'}
+        caixa_resumo['Mês'] = caixa_resumo['Mês'].map(nomes_meses)
+
+        fig = px.bar(caixa_resumo, x='Mês', y=['Entradas', 'Saídas'], barmode='group',
+                     title="Entradas vs Saídas Mensais")
+        st.plotly_chart(fig, use_container_width=True)
+
+        fig_saldo = px.line(
+            caixa_resumo, x='Mês', y='Saldo Acumulado',
+            title='Evolução Mensal do Saldo Acumulado - Caixa',
+            markers=True
+        )
+        st.plotly_chart(fig_saldo, use_container_width=True)
+
+    if 'Descricao' in caixa_filtrado.columns:
+        categoria_resumo = caixa_filtrado.groupby('Descricao')['Valor Líquido'].sum().reset_index()
+        fig_categoria = px.pie(categoria_resumo, names='Descricao', values='Valor Líquido',
+                               title='Distribuição de Gastos/Receitas por Categoria')
+        st.plotly_chart(fig_categoria, use_container_width=True)
+
+    # Tabela detalhada no final
+    st.subheader("🗃️ Tabela Detalhada de Caixa")
+    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entradas', 'Saídas', 'Valor Líquido']],
+                 use_container_width=True)
 
 elif filtro_grafico == "📗 PIS e COFINS":
     st.subheader("📗 Apuração PIS e COFINS")
