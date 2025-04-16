@@ -33,8 +33,8 @@ for df in [entradas, saidas]:
 planilha_contabil = pd.read_excel("Contabilidade.xlsx", sheet_name=None)
 caixa_df = planilha_contabil['Caixa']
 
-# Ajuste: agora só existe uma aba PIS/COFINS unificada
-pis_cofins_df = planilha_contabil['PIS/COFINS']  # Certifique-se que o nome da aba está correto
+# Ajuste: agora só existe uma aba PISCOFINS unificada
+pis_cofins_df = planilha_contabil['PISCOFINS']  # Certifique-se que o nome da aba está correto
 dre_df = planilha_contabil['DRE 1º Trimestre']
 
 # ========== FILTROS DINÂMICOS ==========
