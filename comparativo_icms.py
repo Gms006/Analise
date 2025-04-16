@@ -485,47 +485,62 @@ elif filtro_grafico == "📘 DRE Trimestral":
         "Resumo do resultado do exercício, com receitas, deduções, custos, despesas e lucro/prejuízo final. <i class='fas fa-info-circle'></i>"
     )
 
-    # Extrai os principais valores da DRE
-    receita_bruta = dre_df.iloc[1,2]  # VENDA DE MERCADORIAS A VISTA
-    deducoes = dre_df.iloc[5,2]       # (-) ICMS + COFINS + PIS
-    receita_liquida = dre_df.iloc[6,2] # Total das Receitas Operacionais Líquidas
-    custo_mercadorias = dre_df.iloc[8,2] # COMPRA DE MERCADORIA P/REVENDA A VISTA
-    lucro_bruto = dre_df.iloc[12,2]   # Lucro e/ou Prejuízo Operacional Bruto
-    despesas = dre_df.iloc[13,2]      # Despesas Administrativas
-    resultado_operacional = dre_df.iloc[15,2] # Resultado Operacional
-    resultado_liquido = dre_df.iloc[19,2]     # Lucro/Prejuízo Líquido do Exercício
+    receita_bruta = dre_df.iloc[1,2]
+    deducoes = dre_df.iloc[5,2]
+    receita_liquida = dre_df.iloc[6,2]
+    custo_mercadorias = dre_df.iloc[8,2]
+    lucro_bruto = dre_df.iloc[12,2]
+    despesas = dre_df.iloc[13,2]
+    resultado_operacional = dre_df.iloc[15,2]
+    resultado_liquido = dre_df.iloc[19,2]
 
-    # Cards de destaque
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Receita Bruta", f"R$ {receita_bruta:,.2f}")
     col2.metric("Receita Líquida", f"R$ {receita_liquida:,.2f}")
     col3.metric("Lucro Bruto", f"R$ {lucro_bruto:,.2f}")
     col4.metric("Resultado Líquido", f"R$ {resultado_liquido:,.2f}")
 
-    # DRE em formato hierárquico
-    st.markdown("""
-    <div style="background:#22304A; border-radius:10px; padding:20px; margin-top:20px;">
-    <ul style="list-style:none; padding-left:0; color:#C89D4A; font-size:18px;">
-      <li><b>Receita Operacional Bruta:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
-      <li style="margin-left:20px;">(-) Deduções (ICMS, COFINS, PIS): <span style="color:#fff;">R$ {:,.2f}</span></li>
-      <li><b>Receita Líquida:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
-      <li style="margin-left:20px;">(-) Custos das Mercadorias Vendidas: <span style="color:#fff;">R$ {:,.2f}</span></li>
-      <li><b>Lucro Bruto:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
-      <li style="margin-left:20px;">(-) Despesas Administrativas: <span style="color:#fff;">R$ {:,.2f}</span></li>
-      <li><b>Resultado Operacional:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
-      <li><b>Resultado Líquido do Exercício:</b> <span style="color:#fff;">R$ {:,.2f}</span></li>
-    </ul>
+    st.markdown(f"""
+    <div style="background:#22304A; border-radius:10px; padding:24px; margin-top:20px;">
+      <ul style="list-style:none; padding-left:0; font-size:18px;">
+        <li style="padding:8px 0; color:#C89D4A;">
+          <i class="fas fa-cash-register"></i> <b>Receita Operacional Bruta:</b>
+          <span style="color:#00FFAA;">R$ {receita_bruta:,.2f}</span>
+        </li>
+        <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
+          <i class="fas fa-minus-circle"></i> (-) Deduções (ICMS, COFINS, PIS):
+          <span style="color:#FFA500;">R$ {deducoes:,.2f}</span>
+        </li>
+        <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
+        <li style="padding:8px 0; color:#C89D4A;">
+          <i class="fas fa-file-invoice-dollar"></i> <b>Receita Líquida:</b>
+          <span style="color:#00FFAA;">R$ {receita_liquida:,.2f}</span>
+        </li>
+        <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
+          <i class="fas fa-box"></i> (-) Custos das Mercadorias Vendidas:
+          <span style="color:#FFA500;">R$ {custo_mercadorias:,.2f}</span>
+        </li>
+        <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
+        <li style="padding:8px 0; color:#C89D4A;">
+          <i class="fas fa-chart-line"></i> <b>Lucro Bruto:</b>
+          <span style="color:#00FFAA;">R$ {lucro_bruto:,.2f}</span>
+        </li>
+        <li style="padding:8px 0; color:#C89D4A; margin-left:24px;">
+          <i class="fas fa-money-bill-wave"></i> (-) Despesas Administrativas:
+          <span style="color:#FFA500;">R$ {despesas:,.2f}</span>
+        </li>
+        <hr style="border: 1px dashed #C89D4A; margin: 12px 0;">
+        <li style="padding:8px 0; color:#C89D4A;">
+          <i class="fas fa-balance-scale-left"></i> <b>Resultado Operacional:</b>
+          <span style="color:{'#00FFAA' if resultado_operacional >= 0 else '#FF5555'};">R$ {resultado_operacional:,.2f}</span>
+        </li>
+        <li style="padding:8px 0; color:#C89D4A;">
+          <i class="fas fa-coins"></i> <b>Resultado Líquido do Exercício:</b>
+          <span style="color:{'#00FFAA' if resultado_liquido >= 0 else '#FF5555'};">R$ {resultado_liquido:,.2f}</span>
+        </li>
+      </ul>
     </div>
-    """.format(
-        receita_bruta,
-        deducoes,
-        receita_liquida,
-        custo_mercadorias,
-        lucro_bruto,
-        despesas,
-        resultado_operacional,
-        resultado_liquido
-    ), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # =========================
 # 13. RODAPÉ INSTITUCIONAL
