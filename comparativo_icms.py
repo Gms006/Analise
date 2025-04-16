@@ -233,19 +233,7 @@ filtro_periodo = st.sidebar.selectbox(
     ["Janeiro/2025", "Fevereiro/2025", "Março/2025", "1º Trimestre/2025"],
     key="periodo"
 )
-filtro_grafico = st.sidebar.selectbox(
-    "Tipo de gráfico/relatório:",
-    [
-        "Mapa por UF",
-        "Comparativo de Crédito x Débito",
-        "Apuração com Crédito Acumulado",
-        "Relatórios Detalhados",
-        "📘 Contabilidade e Caixa",
-        "📗 PIS e COFINS",
-        "📘 DRE Trimestral",
-        "📑 Tabelas Contabilidade"
-    ]
-)
+# (Removido: selectbox duplicado de filtro_grafico para evitar conflito de widgets)
 meses_filtrados = periodos[filtro_periodo]
 entradas_filtradas = entradas[entradas['Mês'].dt.month.isin(meses_filtrados)]
 saidas_filtradas = saidas[saidas['Mês'].dt.month.isin(meses_filtrados)]
