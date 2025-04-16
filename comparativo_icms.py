@@ -10,21 +10,18 @@ st.title("📊 Relatório Trimestral GH Sistemas")
 caminho_planilha = "notas_processadas1.xlsx"
 
 # ========== LEITURA ==========
-# LEITURA COM TRATAMENTO DE COLUNAS INVÁLIDAS
 entradas = pd.read_excel(caminho_planilha, sheet_name="Todas Entradas", skiprows=1)
-entradas = entradas.loc[:, ~entradas.columns.to_series().isna()]  # Remove colunas sem nome
-entradas.columns = [str(col).strip() for col in entradas.columns]  # Remove espaços em branco nos nomes das colunas
-entradas = entradas.loc[:, ~entradas.columns.str.contains("Unnamed|^\\d+$", na=False)]  # Remove colunas "Unnamed" ou com nomes numéricos
+entradas = entradas.loc[:, ~entradas.columns.to_series().isna()]
+entradas.columns = [str(col).strip() for col in entradas.columns]
+entradas = entradas.loc[:, ~entradas.columns.str.contains("Unnamed|^\\d+$", na=False)]
 
 saidas = pd.read_excel(caminho_planilha, sheet_name="Todas Saídas")
 
-# LIMPEZA E FORMATOS
 entradas.columns = entradas.columns.str.strip()
 saidas.columns = saidas.columns.str.strip()
 entradas['Mês'] = pd.to_datetime(entradas['Mês'], errors='coerce')
 saidas['Mês'] = pd.to_datetime(saidas['Mês'], errors='coerce')
 
-# CONVERSÕES
 for df in [entradas, saidas]:
     for col in ['Valor ICMS', 'Valor Total', 'Alíquota ICMS']:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -35,7 +32,6 @@ with pd.ExcelFile("Contabilidade.xlsx") as xls:
         caixa_df = pd.read_excel(xls, sheet_name="Caixa")
     else:
         st.warning("Aba 'Caixa' não encontrada.")
-    # Repita para as demais abas
 
 try:
     piscofins_df = pd.read_excel("Contabilidade.xlsx", sheet_name="PISCOFINS")
@@ -45,7 +41,6 @@ except KeyError as e:
 
 @st.cache_data
 def carregar_dados():
-    # leitura dos arquivos
     return entradas, saidas, caixa_df, piscofins_df, dre_df
 
 # ========== FUNÇÕES AUXILIARES ==========
@@ -79,13 +74,15 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
             continue
 
         # Saldo final do mês anterior
+        # Saldo final do mês anterior
         df_ant = df[(df['Ano'] == ano) & (df['Mês'] == (mes - 1))]
         if not df_ant.empty:
             saldo_ant = df_ant['Valor Líquido'].cumsum().iloc[-1]
             data_ant = df_ant['Data'].iloc[-1]
         else:
-            saldo_ant = df[df['Data'] < f"{ano}-{mes:02d}-01"]['Valor Líquido'].sum()
-            data_ant = pd.Timestamp(f"{ano}-{mes:02d}-01") - pd.Timedelta(days=1)
+            data_limite = pd.Timestamp(f"{ano}-{mes:02d}-01")
+            saldo_ant = df[df['Data'] < data_limite]['Valor Líquido'].sum()
+            data_ant = data_limite - pd.Timedelta(days=1)
         pontos.append({'Data': data_ant, 'Saldo Acumulado': saldo_ant, 'Mês': mes})
 
         # Saldo no dia 15 do mês
@@ -120,7 +117,6 @@ periodos = {
 }
 filtro_periodo = st.sidebar.selectbox("Selecione o período:", list(periodos.keys()))
 
-# Separação Fiscal x Contabilidade
 aba = st.sidebar.radio("Selecione a área:", ["Fiscal", "Contabilidade"])
 
 if aba == "Fiscal":
@@ -234,15 +230,12 @@ elif filtro_grafico == "Comparativo de Crédito x Débito":
 elif filtro_grafico == "Relatórios Detalhados":
     st.subheader("📄 Relatórios Detalhados e Download de Tabelas")
 
-    # Exibir Entradas
     st.subheader("📥 Entradas Filtradas")
     st.dataframe(entradas_filtradas.fillna("").astype(str), use_container_width=True)
 
-    # Exibir Saídas
     st.subheader("📤 Saídas Filtradas")
     st.dataframe(saidas_filtradas.fillna("").astype(str), use_container_width=True)
 
-    # Exibir Apuração com crédito acumulado
     st.write("### 📊 Comparativo de Crédito x Débito com Crédito Acumulado")
     st.dataframe(comparativo_filtrado.style.format({
         'ICMS Crédito': 'R$ {:,.2f}',
@@ -251,7 +244,6 @@ elif filtro_grafico == "Relatórios Detalhados":
         'ICMS Apurado Corrigido': 'R$ {:,.2f}'
     }), use_container_width=True)
 
-    # Função para gerar Excel
     def to_excel():
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -261,7 +253,6 @@ elif filtro_grafico == "Relatórios Detalhados":
         processed_data = output.getvalue()
         return processed_data
 
-    # Botão para baixar o Excel completo
     excel_bytes = to_excel()
     st.download_button("⬇️ Baixar Relatórios Completos (.xlsx)",
                        data=excel_bytes,
@@ -271,7 +262,6 @@ elif filtro_grafico == "Relatórios Detalhados":
 elif filtro_grafico == "📘 Contabilidade e Caixa":
     st.subheader("📘 Contabilidade e Caixa")
 
-    # Tratamento das colunas para garantir sinal correto
     caixa_df['Entradas'] = pd.to_numeric(caixa_df['Entradas'], errors='coerce').fillna(0)
     caixa_df['Saídas'] = pd.to_numeric(caixa_df['Saídas'], errors='coerce').fillna(0)
     caixa_df['Entrada'] = caixa_df['Entradas']
@@ -283,10 +273,8 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     caixa_df['Ano'] = caixa_df['Data'].dt.year
 
     meses_selecionados = periodos[filtro_periodo]
-    # Para evolução correta do saldo, não filtre antes de calcular o saldo mensal!
     caixa_ordenado = caixa_df.sort_values('Data').copy()
 
-    # Resumo financeiro no topo (mantém filtrado)
     caixa_filtrado = calcular_saldo_com_acumulado(caixa_df, meses_selecionados)
     receita_total = caixa_filtrado['Entradas'].sum()
     despesa_total = caixa_filtrado['Saídas'].sum()
@@ -299,7 +287,6 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
     col4.metric("📌 Margem (%)", f"{margem:.2f}%")
 
-    # Gráficos e análises
     plotar_saldo_mensal(caixa_df, meses_selecionados)
 
     if 'Descricao' in caixa_filtrado.columns:
@@ -380,7 +367,6 @@ def to_excel():
         entradas_filtradas.to_excel(writer, sheet_name="Entradas", index=False)
         saidas_filtradas.to_excel(writer, sheet_name="Saídas", index=False)
         comparativo_filtrado.to_excel(writer, sheet_name="Apuracao", index=False)
-
         caixa_df.to_excel(writer, sheet_name="Caixa", index=False)
         piscofins_df.to_excel(writer, sheet_name="PISCOFINS", index=False)
         dre_df.to_excel(writer, sheet_name="DRE", index=False)
