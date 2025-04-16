@@ -503,8 +503,27 @@ def to_excel():
         dre_df.to_excel(writer, sheet_name="DRE", index=False)
     processed_data = output.getvalue()
     return processed_data
+    # Título com Font Awesome
+    st.sidebar.markdown("""
+    <h4 style="color:#C89D4A;">
+        <i class="fas fa-calendar-alt"></i> Período
+    </h4>
+    """, unsafe_allow_html=True)
 
-excel_bytes = to_excel()
+    # Opções com emoji (renderizam corretamente no selectbox)
+    periodos = {
+        "📅 Janeiro/2025": [1],
+        "📅 Fevereiro/2025": [2],
+        "📅 Março/2025": [3],
+        "📅 1º Trimestre/2025": [1, 2, 3]
+    }
+    filtro_periodo = st.sidebar.selectbox(
+        "",
+        list(periodos.keys()),
+        key="periodo"
+    )
+
+    excel_bytes = to_excel()
 st.download_button(
     label="⬇️ Baixar Relatórios Completos (.xlsx)",
     data=excel_bytes,
