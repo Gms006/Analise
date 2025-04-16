@@ -490,7 +490,7 @@ elif filtro_grafico == "📘 DRE Trimestral":
         if not row.empty:
             val = row['Saldo'].values[0]
             try:
-                return float(str(val).replace("R$", "").replace(".", "").replace(",", "."))
+                return float(str(val).replace("R$". "").replace(".". "").replace(",", ","))
             except Exception:
                 return 0.0
         return 0.0
