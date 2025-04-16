@@ -6,7 +6,7 @@ from io import BytesIO
 
 # ========== CONFIGURAÇÕES ==========
 st.set_page_config(layout="wide")
-st.title("📊 Relatório Interativo de ICMS")
+st.title("📊 Relatório Trimestral GH Sistemas")
 caminho_planilha = "notas_processadas1.xlsx"
 
 # ========== LEITURA ==========
@@ -189,74 +189,165 @@ elif filtro_grafico == "Relatórios Detalhados":
 elif filtro_grafico == "📘 Contabilidade e Caixa":
     st.subheader("📘 Contabilidade e Caixa")
 
-    # Ajuste para novas colunas: Data, Descrição, Débito, Crédito, Saldo
+    # Tratamento da coluna Data e valores
     caixa_df['Data'] = pd.to_datetime(caixa_df['Data'], errors='coerce')
-    caixa_df['Mês'] = caixa_df['Data'].dt.to_period('M').astype(str)
-    caixa_resumo = caixa_df.groupby('Mês').agg({'Débito': 'sum', 'Crédito': 'sum'}).reset_index()
-    caixa_resumo['Saldo Acumulado'] = (caixa_resumo['Crédito'] - caixa_resumo['Débito']).cumsum()
+    caixa_df['Mês'] = caixa_df['Data'].dt.month
+    caixa_df['Ano'] = caixa_df['Data'].dt.year
 
-    # Cards de resumo
-    total_receitas = caixa_df['Crédito'].sum()
-    total_despesas = caixa_df['Débito'].sum()
-    saldo_final = total_receitas - total_despesas
+    # Convertendo Entradas e Saídas corretamente (Entradas positivas e Saídas negativas)
+    caixa_df['Entrada'] = pd.to_numeric(caixa_df.get('Entrada', 0), errors='coerce').fillna(0)
+    caixa_df['Saída'] = pd.to_numeric(caixa_df.get('Saída', 0), errors='coerce').fillna(0)
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Receita Total", f"R$ {total_receitas:,.2f}")
-    col2.metric("Despesa Total", f"R$ {total_despesas:,.2f}")
-    col3.metric("Saldo Final", f"R$ {saldo_final:,.2f}")
+    caixa_df['Valor Líquido'] = caixa_df['Entrada'] - caixa_df['Saída']
 
-    # Gráfico de barras Receita vs Despesa por mês
-    fig_bar = px.bar(caixa_resumo.melt(id_vars='Mês', value_vars=['Crédito', 'Débito'], var_name='Tipo', value_name='Valor'),
-                     x='Mês', y='Valor', color='Tipo', barmode='group', title="Receita vs Despesa por Mês")
-    st.plotly_chart(fig_bar, use_container_width=True)
+    # Filtrando os períodos dinamicamente
+    periodos = {
+        "Janeiro/2025": [1],
+        "Fevereiro/2025": [2],
+        "Março/2025": [3],
+        "1º Trimestre/2025": [1, 2, 3]
+    }
 
-    # Linha do saldo acumulado
-    fig_saldo = px.line(caixa_resumo, x='Mês', y='Saldo Acumulado', title="Saldo Acumulado")
-    st.plotly_chart(fig_saldo, use_container_width=True)
+    meses_selecionados = periodos[filtro_periodo]
+    caixa_filtrado = caixa_df[caixa_df['Mês'].isin(meses_selecionados)]
 
-    # Gráfico de pizza com % de despesas por descrição
-    if 'Descrição' in caixa_df.columns and caixa_df['Débito'].sum() > 0:
-        cat_desp = caixa_df.groupby('Descrição')['Débito'].sum().reset_index()
-        fig_pie = px.pie(cat_desp, names='Descrição', values='Débito', title="% Despesas por Categoria", hole=0.3)
-        fig_pie.update_traces(textinfo='label+percent')
-        st.plotly_chart(fig_pie, use_container_width=True)
+    # Agrupamento mensal
+    caixa_resumo = caixa_filtrado.groupby('Mês').agg({
+        'Entrada': 'sum',
+        'Saída': 'sum',
+        'Valor Líquido': 'sum'
+    }).reset_index()
 
-    # Tabela interativa
-    st.write("### 📋 Tabela Detalhada de Caixa")
-    descr_filtro = st.multiselect("Filtrar por Descrição", caixa_df['Descrição'].dropna().unique(), default=list(caixa_df['Descrição'].dropna().unique()))
-    df_filtrado = caixa_df[caixa_df['Descrição'].isin(descr_filtro)]
-    st.dataframe(df_filtrado, use_container_width=True)
+    # Cálculo do saldo acumulado
+    caixa_resumo['Saldo Acumulado'] = caixa_resumo['Valor Líquido'].cumsum()
 
-elif filtro_grafico == "📗 PIS" or filtro_grafico == "📙 COFINS":
-    tributo = "PIS" if filtro_grafico == "📗 PIS" else "COFINS"
-    df = pis_df if tributo == "PIS" else cofins_df
-    st.subheader(f"📗 {tributo}" if tributo == "PIS" else f"📙 {tributo}")
+    # Conversão numérica dos meses para nomes
+    nomes_meses = {1:'Janeiro', 2:'Fevereiro', 3:'Março'}
+    caixa_resumo['Mês'] = caixa_resumo['Mês'].map(nomes_meses)
 
-    # Ajuste para novas colunas: Mês, Imposto, Crédito, Débito, Saldo
-    df['Crédito'] = pd.to_numeric(df['Crédito'], errors='coerce').fillna(0)
-    df['Débito'] = pd.to_numeric(df['Débito'], errors='coerce').fillna(0)
-    df['Saldo'] = pd.to_numeric(df['Saldo'], errors='coerce').fillna(0)
-    resumo = df.groupby('Mês').agg({'Crédito': 'sum', 'Débito': 'sum'}).reset_index()
-    resumo['Saldo a Transportar'] = resumo['Crédito'] - resumo['Débito']
-
-    # Cards
-    total_credito = df['Crédito'].sum()
-    total_debito = df['Débito'].sum()
-    saldo_final = df['Saldo'].iloc[-1] if not df.empty else 0
-
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Total Creditado", f"R$ {total_credito:,.2f}")
-    c2.metric("Total Recolhido", f"R$ {total_debito:,.2f}")
-    c3.metric("Saldo Final", f"R$ {saldo_final:,.2f}")
-
-    # Gráfico de colunas: Crédito x Débito por mês
-    graf = resumo.melt(id_vars='Mês', value_vars=['Crédito', 'Débito'], var_name='Tipo', value_name='Valor')
-    fig = px.bar(graf, x='Mês', y='Valor', color='Tipo', barmode='group', title=f"{tributo}: Crédito x Débito por Mês")
+    # Gráfico de barras Entradas vs Saídas
+    fig = px.bar(caixa_resumo, x='Mês', y=['Entrada', 'Saída'], barmode='group',
+                 title="Entradas vs Saídas Mensais")
     st.plotly_chart(fig, use_container_width=True)
 
-    # Demonstração dos créditos a transportar
-    st.write("### Créditos a Transportar")
-    st.dataframe(resumo[['Mês', 'Saldo a Transportar']], use_container_width=True)
+    # Gráfico de linha Saldo Acumulado
+    fig_saldo = px.line(caixa_resumo, x='Mês', y='Saldo Acumulado',
+                        title='Saldo Acumulado Mensal')
+    st.plotly_chart(fig_saldo, use_container_width=True)
+
+    # Gráfico Pizza por categoria (Descrição)
+    if 'Descricao' in caixa_filtrado.columns:
+        categoria_resumo = caixa_filtrado.groupby('Descricao')['Valor Líquido'].sum().reset_index()
+        fig_categoria = px.pie(categoria_resumo, names='Descricao', values='Valor Líquido',
+                               title='Distribuição de Gastos/Receitas por Categoria')
+        st.plotly_chart(fig_categoria, use_container_width=True)
+
+    # Cards de resumo financeiro
+    receita_total = caixa_filtrado['Entrada'].sum()
+    despesa_total = caixa_filtrado['Saída'].sum()
+    saldo_final = receita_total - despesa_total
+    margem = (saldo_final / receita_total * 100) if receita_total != 0 else 0
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("📈 Receita Total", f"R$ {receita_total:,.2f}")
+    col2.metric("📉 Despesa Total", f"R$ {despesa_total:,.2f}")
+    col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
+    col4.metric("📌 Margem (%)", f"{margem:.2f}%")
+
+    # Tabela detalhada
+    st.subheader("🗃️ Tabela Detalhada de Caixa")
+    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entrada', 'Saída', 'Valor Líquido']],
+                 use_container_width=True)
+
+elif filtro_grafico == "📗 PIS":
+    st.subheader("📗 Apuração PIS/COFINS")
+
+    # Garantindo tipos corretos e limpeza de dados
+    pis_df['Crédito'] = pd.to_numeric(pis_df['Crédito'], errors='coerce').fillna(0)
+    pis_df['Débito'] = pd.to_numeric(pis_df['Débito'], errors='coerce').fillna(0)
+    pis_df['Saldo'] = pis_df['Crédito'] - pis_df['Débito']
+
+    # Filtragem dinâmica dos períodos
+    meses_filtro = {
+        "Janeiro/2025": ["Janeiro"],
+        "Fevereiro/2025": ["Fevereiro"],
+        "Março/2025": ["Março"],
+        "1º Trimestre/2025": ["Janeiro", "Fevereiro", "Março"]
+    }
+
+    meses_selecionados = meses_filtro[filtro_periodo]
+    pis_filtrado = pis_df[pis_df['Mês'].isin(meses_selecionados)]
+
+    # Gráfico de barras Créditos vs Débitos
+    fig_pis = px.bar(pis_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
+                     title='Créditos vs Débitos PIS')
+    st.plotly_chart(fig_pis, use_container_width=True)
+
+    # Gráfico de linha do Saldo acumulado
+    pis_filtrado['Saldo Acumulado'] = pis_filtrado['Saldo'].cumsum()
+    fig_saldo_pis = px.line(pis_filtrado, x='Mês', y='Saldo Acumulado',
+                            title='Saldo Acumulado PIS')
+    st.plotly_chart(fig_saldo_pis, use_container_width=True)
+
+    # Cards de resumo financeiro para PIS
+    credito_total = pis_filtrado['Crédito'].sum()
+    debito_total = pis_filtrado['Débito'].sum()
+    saldo_final = credito_total - debito_total
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("💳 Total Créditos", f"R$ {credito_total:,.2f}")
+    col2.metric("📌 Total Débitos", f"R$ {debito_total:,.2f}")
+    col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
+
+    # Tabela detalhada
+    st.subheader("📋 Tabela Detalhada PIS")
+    st.dataframe(pis_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
+                 use_container_width=True)
+
+elif filtro_grafico == "📙 COFINS":
+    st.subheader("📙 Apuração COFINS")
+
+    # Garantindo tipos corretos e limpeza de dados
+    cofins_df['Crédito'] = pd.to_numeric(cofins_df['Crédito'], errors='coerce').fillna(0)
+    cofins_df['Débito'] = pd.to_numeric(cofins_df['Débito'], errors='coerce').fillna(0)
+    cofins_df['Saldo'] = cofins_df['Crédito'] - cofins_df['Débito']
+
+    # Filtragem dinâmica dos períodos
+    meses_filtro = {
+        "Janeiro/2025": ["Janeiro"],
+        "Fevereiro/2025": ["Fevereiro"],
+        "Março/2025": ["Março"],
+        "1º Trimestre/2025": ["Janeiro", "Fevereiro", "Março"]
+    }
+
+    meses_selecionados = meses_filtro[filtro_periodo]
+    cofins_filtrado = cofins_df[cofins_df['Mês'].isin(meses_selecionados)]
+
+    # Gráfico de barras Créditos vs Débitos
+    fig_cofins = px.bar(cofins_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
+                        title='Créditos vs Débitos COFINS')
+    st.plotly_chart(fig_cofins, use_container_width=True)
+
+    # Gráfico de linha do Saldo acumulado
+    cofins_filtrado['Saldo Acumulado'] = cofins_filtrado['Saldo'].cumsum()
+    fig_saldo_cofins = px.line(cofins_filtrado, x='Mês', y='Saldo Acumulado',
+                               title='Saldo Acumulado COFINS')
+    st.plotly_chart(fig_saldo_cofins, use_container_width=True)
+
+    # Cards de resumo financeiro para COFINS
+    credito_total = cofins_filtrado['Crédito'].sum()
+    debito_total = cofins_filtrado['Débito'].sum()
+    saldo_final = credito_total - debito_total
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("💳 Total Créditos", f"R$ {credito_total:,.2f}")
+    col2.metric("📌 Total Débitos", f"R$ {debito_total:,.2f}")
+    col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
+
+    # Tabela detalhada
+    st.subheader("📋 Tabela Detalhada COFINS")
+    st.dataframe(cofins_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
+                 use_container_width=True)
 
 elif filtro_grafico == "📘 DRE Trimestral":
     st.subheader("📘 DRE Trimestral")
