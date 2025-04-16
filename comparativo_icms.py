@@ -244,7 +244,8 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
             'Valor Líquido': 'sum'
         }).reset_index()
         caixa_decendio['Período'] = caixa_decendio['Decêndio'].map({1: '1-10', 2: '11-20', 3: '21-31'})
-        caixa_decendio['Saldo Acumulado'] = caixa_decendio['Valor Líquido'].cumsum() + saldo_inicial - caixa_decendio['Valor Líquido'].iloc[0]
+        # Correção: saldo acumulado parte do saldo inicial e soma os decêndios
+        caixa_decendio['Saldo Acumulado'] = saldo_inicial + caixa_decendio['Valor Líquido'].cumsum()
 
         fig = px.bar(caixa_decendio, x='Período', y=['Entradas', 'Saídas'], barmode='group',
                      title="Entradas vs Saídas por Período (10 em 10 dias)")
