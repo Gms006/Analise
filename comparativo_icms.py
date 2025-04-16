@@ -230,13 +230,15 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     # Gráficos e análises
     if len(meses_selecionados) == 1:
         if 'Saldo' in caixa_ordenado.columns:
+            caixa_ordenado = caixa_ordenado.reset_index().rename(columns={'index': 'OrigIndex'})
+            caixa_ordenado['Mês Nome'] = caixa_ordenado['Mês'].map({1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'})
             caixa_mes = caixa_ordenado[caixa_ordenado['Mês'] == meses_selecionados[0]].copy()
             caixa_mes['Dia'] = caixa_mes['Data'].dt.day
             caixa_mes['Decêndio'] = ((caixa_mes['Dia'] - 1) // 10 + 1).clip(upper=3)
             caixa_mes['Período'] = caixa_mes['Decêndio'].map({1: '1-10', 2: '11-20', 3: '21-31'})
 
             # Ordena por Data e pelo índice original para garantir o último lançamento do decêndio
-            caixa_mes = caixa_mes.sort_values(['Decêndio', 'Data', caixa_mes.index])
+            caixa_mes = caixa_mes.sort_values(['Decêndio', 'Data', 'OrigIndex'])
             caixa_decendio = caixa_mes.dropna(subset=['Saldo']).groupby('Decêndio').tail(1)
             caixa_decendio = caixa_decendio[['Período', 'Saldo', 'Data']].reset_index(drop=True)
 
@@ -251,7 +253,7 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
             data_inicio = caixa_mes['Data'].min()
             caixa_anterior = caixa_ordenado[caixa_ordenado['Data'] < data_inicio]
             if not caixa_anterior.empty:
-                saldo_anterior = caixa_anterior.dropna(subset=['Saldo']).sort_values(['Data', caixa_anterior.index]).iloc[-1]['Saldo']
+                saldo_anterior = caixa_anterior.dropna(subset=['Saldo']).sort_values(['Data', 'OrigIndex']).iloc[-1]['Saldo']
                 st.info(f"Saldo inicial do mês: R$ {saldo_anterior:,.2f}")
         else:
             # Fallback se não houver coluna Saldo
@@ -274,9 +276,9 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
             st.plotly_chart(fig_saldo, use_container_width=True)
     else:
         if 'Saldo' in caixa_ordenado.columns:
+            caixa_ordenado = caixa_ordenado.reset_index().rename(columns={'index': 'OrigIndex'})
             caixa_ordenado['Mês Nome'] = caixa_ordenado['Mês'].map({1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'})
-            caixa_mensal_saldo = caixa_ordenado.dropna(subset=['Saldo']).sort_values(['Data', caixa_ordenado.index])
-            # Garante o último lançamento do mês, mesmo que haja vários no mesmo dia
+            caixa_mensal_saldo = caixa_ordenado.dropna(subset=['Saldo']).sort_values(['Data', 'OrigIndex'])
             caixa_saldo_final_mes = caixa_mensal_saldo.groupby('Mês').tail(1)
             caixa_saldo_final_mes = caixa_saldo_final_mes[caixa_saldo_final_mes['Mês'].isin(meses_selecionados)]
 
