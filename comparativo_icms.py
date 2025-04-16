@@ -340,11 +340,6 @@ elif filtro_grafico == "📘 DRE Trimestral":
     dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
     dre_total = dre_df.groupby('Descrição')['Valor'].sum().reset_index()
 
-    # Gráficos principais
-    grupo = dre_total[dre_total['Descrição'].str.contains("Receita|Resultado", case=False)]
-    fig_dre = px.bar(grupo, x='Descrição', y='Valor', title="Receita vs Resultado Líquido")
-    st.plotly_chart(fig_dre, use_container_width=True)
-    
     # Tabela dinâmica e fácil de visualizar
     st.markdown("### 📋 Tabela Completa DRE")
     st.dataframe(dre_df, use_container_width=True)
