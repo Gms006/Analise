@@ -30,13 +30,23 @@ for df in [entradas, saidas]:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
 # ========== LEITURA DA PLANILHA CONTABILIDADE ==========
-planilha_contabil = pd.read_excel("Contabilidade.xlsx", sheet_name=None)
+with pd.ExcelFile("Contabilidade.xlsx") as xls:
+    if "Caixa" in xls.sheet_names:
+        caixa_df = pd.read_excel(xls, sheet_name="Caixa")
+    else:
+        st.warning("Aba 'Caixa' não encontrada.")
+    # Repita para as demais abas
+
 try:
-    caixa_df = planilha_contabil['Caixa']
-    piscofins_df = planilha_contabil['PISCOFINS']
-    dre_df = planilha_contabil['DRE 1º Trimestre']
+    piscofins_df = pd.read_excel("Contabilidade.xlsx", sheet_name="PISCOFINS")
+    dre_df = pd.read_excel("Contabilidade.xlsx", sheet_name="DRE 1º Trimestre")
 except KeyError as e:
     st.error(f"Erro: Aba não encontrada - {e}")
+
+@st.cache_data
+def carregar_dados():
+    # leitura dos arquivos
+    return entradas, saidas, caixa_df, piscofins_df, dre_df
 
 # ========== FILTROS DINÂMICOS ==========
 st.sidebar.header("🎛️ Filtros")
@@ -164,11 +174,11 @@ elif filtro_grafico == "Relatórios Detalhados":
 
     # Exibir Entradas
     st.subheader("📥 Entradas Filtradas")
-    st.dataframe(entradas_filtradas.replace({pd.NA: "", None: "", float("nan"): ""}), use_container_width=True)
+    st.dataframe(entradas_filtradas.fillna("").astype(str), use_container_width=True)
 
     # Exibir Saídas
     st.subheader("📤 Saídas Filtradas")
-    st.dataframe(saidas_filtradas.replace({pd.NA: "", None: "", float("nan"): ""}), use_container_width=True)
+    st.dataframe(saidas_filtradas.fillna("").astype(str), use_container_width=True)
 
     # Exibir Apuração com crédito acumulado
     st.write("### 📊 Comparativo de Crédito x Débito com Crédito Acumulado")
@@ -215,7 +225,7 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     caixa_ordenado = caixa_df.sort_values('Data').copy()
 
     # Resumo financeiro no topo (mantém filtrado)
-    caixa_filtrado = caixa_df[caixa_df['Mês'].isin(meses_selecionados)]
+    caixa_filtrado = calcular_saldo_com_acumulado(caixa_df, meses_selecionados)
     receita_total = caixa_filtrado['Entradas'].sum()
     despesa_total = caixa_filtrado['Saídas'].sum()
     saldo_final = receita_total - despesa_total
@@ -228,108 +238,7 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     col4.metric("📌 Margem (%)", f"{margem:.2f}%")
 
     # Gráficos e análises
-    if 'Saldo' in caixa_df.columns:
-        # Garante que estamos pegando o saldo do ÚLTIMO LANÇAMENTO COM SALDO de cada mês
-        caixa_ordenado = caixa_df.reset_index().rename(columns={'index': 'OrigIndex'})
-        caixa_ordenado['Data'] = pd.to_datetime(caixa_ordenado['Data'], errors='coerce')
-        caixa_ordenado['Mês'] = caixa_ordenado['Data'].dt.month
-        # Filtra apenas os meses selecionados
-        caixa_ordenado = caixa_ordenado[caixa_ordenado['Mês'].isin(meses_selecionados)]
-        # Pega o último saldo válido de cada mês
-        caixa_saldo_final_mes = (
-            caixa_ordenado.dropna(subset=['Saldo'])
-            .sort_values(['Data', 'OrigIndex'])
-            .groupby('Mês', as_index=False)
-            .tail(1)
-        )
-        caixa_saldo_final_mes['Mês Nome'] = caixa_saldo_final_mes['Mês'].map({1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'})
-
-        fig_saldo = px.line(
-            caixa_saldo_final_mes, x='Mês Nome', y='Saldo',
-            title='Evolução Mensal do Saldo Acumulado - Caixa',
-            markers=True
-        )
-        st.plotly_chart(fig_saldo, use_container_width=True)
-    else:
-        if len(meses_selecionados) == 1:
-            if 'Saldo' in caixa_ordenado.columns:
-                caixa_ordenado = caixa_ordenado.dropna(subset=['Saldo']).copy()
-                caixa_ordenado['Data'] = pd.to_datetime(caixa_ordenado['Data'], errors='coerce')
-                caixa_ordenado['Mês'] = caixa_ordenado['Data'].dt.month
-                caixa_ordenado['Mês Nome'] = caixa_ordenado['Mês'].map({1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'})
-                caixa_ordenado = caixa_ordenado[caixa_ordenado['Mês'].isin(meses_selecionados)]
-                caixa_ordenado = caixa_ordenado.sort_values(['Data', 'OrigIndex'])
-
-                # Pega o último saldo válido de cada mês
-                saldo_final_mes = caixa_ordenado.groupby('Mês').tail(1)
-
-                fig_saldo = px.line(
-                    saldo_final_mes, x='Mês Nome', y='Saldo',
-                    title='Evolução Mensal do Saldo Acumulado - Caixa',
-                    markers=True
-                )
-                st.plotly_chart(fig_saldo, use_container_width=True)
-            else:
-                caixa_mes = caixa_ordenado[caixa_ordenado['Mês'] == meses_selecionados[0]].copy()
-                caixa_mes['Dia'] = caixa_mes['Data'].dt.day
-                caixa_mes['Decêndio'] = ((caixa_mes['Dia'] - 1) // 10 + 1).clip(upper=3)
-                caixa_mes['Período'] = caixa_mes['Decêndio'].map({1: '1-10', 2: '11-20', 3: '21-31'})
-                caixa_decendio = caixa_mes.groupby('Decêndio').agg({
-                    'Entradas': 'sum',
-                    'Saídas': 'sum',
-                    'Valor Líquido': 'sum'
-                }).reset_index()
-                caixa_decendio['Saldo Acumulado'] = caixa_decendio['Valor Líquido'].cumsum()
-
-                fig_saldo = px.line(
-                    caixa_decendio, x='Período', y='Saldo Acumulado',
-                    title='Evolução do Saldo Acumulado - Caixa (10 em 10 dias)',
-                    markers=True
-                )
-                st.plotly_chart(fig_saldo, use_container_width=True)
-        else:
-            if 'Saldo' in caixa_ordenado.columns:
-                caixa_ordenado = caixa_ordenado.reset_index().rename(columns={'index': 'OrigIndex'})
-                caixa_ordenado = caixa_ordenado.dropna(subset=['Saldo'])
-                caixa_ordenado['Data'] = pd.to_datetime(caixa_ordenado['Data'], errors='coerce')
-                caixa_ordenado['Mês Nome'] = caixa_ordenado['Mês'].map({1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'})
-
-                caixa_ordenado = caixa_ordenado.sort_values(['Data', 'OrigIndex'])
-
-                caixa_saldo_final_mes = caixa_ordenado.groupby('Mês').tail(1)
-                caixa_saldo_final_mes = caixa_saldo_final_mes[caixa_saldo_final_mes['Mês'].isin(meses_selecionados)]
-
-                fig_saldo = px.line(
-                    caixa_saldo_final_mes, x='Mês Nome', y='Saldo',
-                    title='Evolução Mensal do Saldo Acumulado - Caixa',
-                    markers=True
-                )
-                st.plotly_chart(fig_saldo, use_container_width=True)
-            else:
-                caixa_resumo = caixa_filtrado.groupby('Mês').agg({
-                    'Entradas': 'sum',
-                    'Saídas': 'sum',
-                    'Valor Líquido': 'sum'
-                }).reset_index().sort_values('Mês')
-                caixa_resumo['Saldo Acumulado'] = caixa_resumo['Valor Líquido'].cumsum()
-                nomes_meses = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'}
-                caixa_resumo['Mês Nome'] = caixa_resumo['Mês'].map(nomes_meses)
-                fig_saldo = px.line(
-                    caixa_resumo, x='Mês Nome', y='Saldo Acumulado',
-                    title='Evolução Mensal do Saldo Acumulado - Caixa',
-                    markers=True
-                )
-                st.plotly_chart(fig_saldo, use_container_width=True)
-
-            caixa_resumo = caixa_filtrado.groupby('Mês').agg({
-                'Entradas': 'sum',
-                'Saídas': 'sum'
-            }).reset_index()
-            nomes_meses = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'}
-            caixa_resumo['Mês Nome'] = caixa_resumo['Mês'].map(nomes_meses)
-            fig = px.bar(caixa_resumo, x='Mês Nome', y=['Entradas', 'Saídas'], barmode='group',
-                         title="Entradas vs Saídas Mensais")
-            st.plotly_chart(fig, use_container_width=True)
+    plotar_saldo_mensal(caixa_df, meses_selecionados)
 
     if 'Descricao' in caixa_filtrado.columns:
         categoria_resumo = caixa_filtrado.groupby('Descricao')['Valor Líquido'].sum().reset_index()
@@ -338,7 +247,7 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
         st.plotly_chart(fig_categoria, use_container_width=True)
 
     st.subheader("🗃️ Tabela Detalhada de Caixa")
-    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entradas', 'Saídas', 'Valor Líquido']],
+    st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entradas', 'Saídas', 'Valor Líquido', 'Saldo Acumulado']],
                  use_container_width=True)
 
 elif filtro_grafico == "📗 PIS e COFINS":
@@ -421,3 +330,25 @@ st.download_button("⬇️ Baixar Relatórios Completos (.xlsx)",
                    data=excel_bytes,
                    file_name="Relatorio_ICMS_Completo.xlsx",
                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+def plotar_saldo_mensal(caixa_df, meses_selecionados):
+    if 'Data' in caixa_df.columns and 'Entradas' in caixa_df.columns and 'Saídas' in caixa_df.columns:
+        df_grafico = calcular_saldo_com_acumulado(caixa_df, meses_selecionados)
+        fig = px.line(df_grafico, x="Data", y="Saldo Acumulado", title="Evolução do Saldo Acumulado - Caixa", markers=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+def calcular_saldo_com_acumulado(df, meses_filtrados):
+    df = df.sort_values("Data").copy()
+    df["Mês"] = df["Data"].dt.month
+    df["Ano"] = df["Data"].dt.year
+    df["Valor Líquido"] = df["Entradas"] - df["Saídas"]
+
+    # Saldo inicial: soma dos lançamentos anteriores ao primeiro mês filtrado
+    primeiro_mes = min(meses_filtrados)
+    saldo_anterior = df[df["Mês"] < primeiro_mes]["Valor Líquido"].sum()
+
+    # Filtra os meses desejados
+    df_filtrado = df[df["Mês"].isin(meses_filtrados)].copy()
+    df_filtrado["Saldo Acumulado"] = df_filtrado["Valor Líquido"].cumsum() + saldo_anterior
+
+    return df_filtrado
