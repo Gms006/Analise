@@ -490,10 +490,22 @@ elif filtro_grafico == "📘 DRE Trimestral":
         if not row.empty:
             val = row['Saldo'].values[0]
             try:
-                return float(str(val).replace("R$". "").replace(".". "").replace(",", ","))
+                return float(str(val).replace("R$", "").replace(".", "").replace(",", "."))
             except Exception:
                 return 0.0
         return 0.0
+
+    receita_bruta = get_dre_val("VENDA DE MERCADORIAS A VISTA")
+    def get_dre_val(desc):
+        row = dre_df[dre_df['Descrição'].str.strip().str.upper() == desc.strip().upper()]
+        if not row.empty:
+            val = row['Saldo'].values[0]
+            try:
+                numeric_value = float(str(val).replace("R$", "").replace(".", "").replace(",", "."))
+                return f"{numeric_value:,.2f}".replace(",", "*").replace(".", ",").replace("*", ".")
+            except Exception:
+                return "0,00"
+        return "0,00"
 
     receita_bruta = get_dre_val("VENDA DE MERCADORIAS A VISTA")
     deducoes = get_dre_val("(-) Deduções das Receitas Operacionais")
