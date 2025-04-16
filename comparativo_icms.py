@@ -126,7 +126,6 @@ if aba == "Fiscal":
     filtro_grafico = st.sidebar.selectbox("Tipo de gráfico Fiscal:", [
         "Mapa por UF",
         "Comparativo de Crédito x Débito",
-        "Apuração com Crédito Acumulado",
         "Relatórios Detalhados",
     ])
 else:
