@@ -150,7 +150,7 @@ def plotar_saldo_mensal(caixa_df, meses_selecionados):
             pontos.append({'Data': data_fim, 'Saldo Acumulado': saldo_fim, 'Mês': mes})
 
     df_pontos = pd.DataFrame(pontos)
-    fig = px.line(df_pontos, x="Data", y="Saldo Acumulado", markers=True, title="Evolução Decacional do Saldo Acumulado - Caixa")
+    fig = px.line(df_pontos, x="Data", y="Saldo Acumulado", markers=True, title="Evolução  Saldo de caixa ")
     st.plotly_chart(fig, use_container_width=True)
 
 # ========== FILTROS DINÂMICOS ==========
@@ -400,7 +400,7 @@ elif filtro_grafico == "📗 PIS e COFINS":
     df_pontos = pd.DataFrame(pontos)
     fig_saldo_pis = px.line(
         df_pontos, x='Mês', y='Saldo',
-        title='Evolução Mensal do Saldo Acumulado - PIS e COFINS (Crédito negativo é positivo no gráfico)',
+        title='Evolução do Saldo Acumulado - PIS e COFINS',
         markers=True
     )
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
