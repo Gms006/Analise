@@ -189,18 +189,15 @@ elif filtro_grafico == "Relatórios Detalhados":
 elif filtro_grafico == "📘 Contabilidade e Caixa":
     st.subheader("📘 Contabilidade e Caixa")
 
-    # Agrupamento por mês e trimestre
+    # Ajuste para novas colunas: Data, Descrição, Débito, Crédito, Saldo
     caixa_df['Data'] = pd.to_datetime(caixa_df['Data'], errors='coerce')
-    caixa_df['AnoMes'] = caixa_df['Data'].dt.to_period('M').astype(str)
-    caixa_df['Trimestre'] = caixa_df['Data'].dt.to_period('Q').astype(str)
-
-    # Receitas = Saída, Despesas = Entrada (ajuste conforme sua regra)
-    receitas = caixa_df[caixa_df['Tipo'].str.lower() == 'saida']
-    despesas = caixa_df[caixa_df['Tipo'].str.lower() == 'entrada']
+    caixa_df['Mês'] = caixa_df['Data'].dt.to_period('M').astype(str)
+    caixa_resumo = caixa_df.groupby('Mês').agg({'Débito': 'sum', 'Crédito': 'sum'}).reset_index()
+    caixa_resumo['Saldo Acumulado'] = (caixa_resumo['Crédito'] - caixa_resumo['Débito']).cumsum()
 
     # Cards de resumo
-    total_receitas = receitas['Valor'].sum()
-    total_despesas = despesas['Valor'].sum()
+    total_receitas = caixa_df['Crédito'].sum()
+    total_despesas = caixa_df['Débito'].sum()
     saldo_final = total_receitas - total_despesas
 
     col1, col2, col3 = st.columns(3)
@@ -209,36 +206,25 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     col3.metric("Saldo Final", f"R$ {saldo_final:,.2f}")
 
     # Gráfico de barras Receita vs Despesa por mês
-    resumo_mes = caixa_df.groupby(['AnoMes', 'Tipo'])['Valor'].sum().reset_index()
-    fig_bar = px.bar(resumo_mes, x='AnoMes', y='Valor', color='Tipo', barmode='group', title="Receita vs Despesa por Mês")
+    fig_bar = px.bar(caixa_resumo.melt(id_vars='Mês', value_vars=['Crédito', 'Débito'], var_name='Tipo', value_name='Valor'),
+                     x='Mês', y='Valor', color='Tipo', barmode='group', title="Receita vs Despesa por Mês")
     st.plotly_chart(fig_bar, use_container_width=True)
 
-    # Gráfico de barras Receita vs Despesa por trimestre
-    resumo_tri = caixa_df.groupby(['Trimestre', 'Tipo'])['Valor'].sum().reset_index()
-    fig_tri = px.bar(resumo_tri, x='Trimestre', y='Valor', color='Tipo', barmode='group', title="Receita vs Despesa por Trimestre")
-    st.plotly_chart(fig_tri, use_container_width=True)
-
-    # Saldo acumulado
-    caixa_df = caixa_df.sort_values('Data')
-    caixa_df['Mov'] = caixa_df.apply(lambda row: row['Valor'] if row['Tipo'].lower() == 'saida' else -row['Valor'], axis=1)
-    caixa_df['Saldo Acumulado'] = caixa_df['Mov'].cumsum()
-    fig_saldo = px.line(caixa_df, x='Data', y='Saldo Acumulado', title="Saldo Acumulado")
+    # Linha do saldo acumulado
+    fig_saldo = px.line(caixa_resumo, x='Mês', y='Saldo Acumulado', title="Saldo Acumulado")
     st.plotly_chart(fig_saldo, use_container_width=True)
 
-    # Pizza de despesas por categoria
-    if 'Categoria' in caixa_df.columns:
-        cat_desp = despesas.groupby('Categoria')['Valor'].sum().reset_index()
-        fig_pie = px.pie(cat_desp, names='Categoria', values='Valor', title="% Despesas por Categoria", hole=0.3)
+    # Gráfico de pizza com % de despesas por descrição
+    if 'Descrição' in caixa_df.columns and caixa_df['Débito'].sum() > 0:
+        cat_desp = caixa_df.groupby('Descrição')['Débito'].sum().reset_index()
+        fig_pie = px.pie(cat_desp, names='Descrição', values='Débito', title="% Despesas por Categoria", hole=0.3)
         fig_pie.update_traces(textinfo='label+percent')
         st.plotly_chart(fig_pie, use_container_width=True)
 
-    # Filtros interativos
+    # Tabela interativa
     st.write("### 📋 Tabela Detalhada de Caixa")
-    tipo_filtro = st.multiselect("Filtrar por Tipo", caixa_df['Tipo'].unique(), default=list(caixa_df['Tipo'].unique()))
-    cat_filtro = st.multiselect("Filtrar por Categoria", caixa_df['Categoria'].dropna().unique() if 'Categoria' in caixa_df.columns else [], default=[])
-    df_filtrado = caixa_df[caixa_df['Tipo'].isin(tipo_filtro)]
-    if cat_filtro and 'Categoria' in caixa_df.columns:
-        df_filtrado = df_filtrado[df_filtrado['Categoria'].isin(cat_filtro)]
+    descr_filtro = st.multiselect("Filtrar por Descrição", caixa_df['Descrição'].dropna().unique(), default=list(caixa_df['Descrição'].dropna().unique()))
+    df_filtrado = caixa_df[caixa_df['Descrição'].isin(descr_filtro)]
     st.dataframe(df_filtrado, use_container_width=True)
 
 elif filtro_grafico == "📗 PIS" or filtro_grafico == "📙 COFINS":
@@ -246,11 +232,12 @@ elif filtro_grafico == "📗 PIS" or filtro_grafico == "📙 COFINS":
     df = pis_df if tributo == "PIS" else cofins_df
     st.subheader(f"📗 {tributo}" if tributo == "PIS" else f"📙 {tributo}")
 
-    # Agrupamento por mês
-    df['AnoMes'] = df['Data'].dt.to_period('M').astype(str)
+    # Ajuste para novas colunas: Mês, Imposto, Crédito, Débito, Saldo
     df['Crédito'] = pd.to_numeric(df['Crédito'], errors='coerce').fillna(0)
     df['Débito'] = pd.to_numeric(df['Débito'], errors='coerce').fillna(0)
     df['Saldo'] = pd.to_numeric(df['Saldo'], errors='coerce').fillna(0)
+    resumo = df.groupby('Mês').agg({'Crédito': 'sum', 'Débito': 'sum'}).reset_index()
+    resumo['Saldo a Transportar'] = resumo['Crédito'] - resumo['Débito']
 
     # Cards
     total_credito = df['Crédito'].sum()
@@ -263,37 +250,36 @@ elif filtro_grafico == "📗 PIS" or filtro_grafico == "📙 COFINS":
     c3.metric("Saldo Final", f"R$ {saldo_final:,.2f}")
 
     # Gráfico de colunas: Crédito x Débito por mês
-    graf = df.groupby('AnoMes')[['Crédito', 'Débito']].sum().reset_index()
-    graf_melt = graf.melt(id_vars='AnoMes', var_name='Tipo', value_name='Valor')
-    fig = px.bar(graf_melt, x='AnoMes', y='Valor', color='Tipo', barmode='group', title=f"{tributo}: Crédito x Débito por Mês")
+    graf = resumo.melt(id_vars='Mês', value_vars=['Crédito', 'Débito'], var_name='Tipo', value_name='Valor')
+    fig = px.bar(graf, x='Mês', y='Valor', color='Tipo', barmode='group', title=f"{tributo}: Crédito x Débito por Mês")
     st.plotly_chart(fig, use_container_width=True)
 
     # Demonstração dos créditos a transportar
     st.write("### Créditos a Transportar")
-    st.dataframe(df[['AnoMes', 'Saldo']], use_container_width=True)
+    st.dataframe(resumo[['Mês', 'Saldo a Transportar']], use_container_width=True)
 
 elif filtro_grafico == "📘 DRE Trimestral":
     st.subheader("📘 DRE Trimestral")
-    dre_df.columns = dre_df.columns.str.strip()
     dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
+    dre_total = dre_df.groupby('Descrição')['Valor'].sum().reset_index()
 
     # Tabela formatada
-    st.dataframe(dre_df, use_container_width=True)
+    st.dataframe(dre_total, use_container_width=True)
 
     # Gráfico de barras: Receita vs Resultado Líquido
-    grupo = dre_df[dre_df['Conta'].str.contains("Receita|Resultado", case=False)]
-    fig_dre = px.bar(grupo, x='Conta', y='Valor', title="Receita vs Resultado Líquido")
+    grupo = dre_total[dre_total['Descrição'].str.contains("Receita|Resultado", case=False)]
+    fig_dre = px.bar(grupo, x='Descrição', y='Valor', title="Receita vs Resultado Líquido")
     st.plotly_chart(fig_dre, use_container_width=True)
 
     # Gráfico de pizza: despesas sobre o resultado
-    despesas = dre_df[dre_df['Conta'].str.contains("Despesa", case=False)]
+    despesas = dre_total[dre_total['Descrição'].str.contains("Despesa", case=False)]
     if not despesas.empty:
-        fig_pizza_desp = px.pie(despesas, names='Conta', values='Valor', title="Composição das Despesas", hole=0.3)
+        fig_pizza_desp = px.pie(despesas, names='Descrição', values='Valor', title="Composição das Despesas", hole=0.3)
         fig_pizza_desp.update_traces(textinfo='label+percent')
         st.plotly_chart(fig_pizza_desp, use_container_width=True)
 
     # Destaque visual de prejuízo
-    resultado = dre_df[dre_df['Conta'].str.contains("Resultado Líquido", case=False)]['Valor'].sum()
+    resultado = dre_total[dre_total['Descrição'].str.contains("Resultado Líquido", case=False)]['Valor'].sum()
     if resultado < 0:
         st.error(f"❌ Prejuízo apurado no período: R$ {abs(resultado):,.2f}")
     else:
