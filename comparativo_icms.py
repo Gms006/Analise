@@ -336,24 +336,15 @@ elif filtro_grafico == "📗 PIS e COFINS":
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
 
 elif filtro_grafico == "📘 DRE Trimestral":
+    st.subheader("📘 DRE Trimestral")
+    dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
+    dre_total = dre_df.groupby('Descrição')['Valor'].sum().reset_index()
 
     # Gráficos principais
     grupo = dre_total[dre_total['Descrição'].str.contains("Receita|Resultado", case=False)]
     fig_dre = px.bar(grupo, x='Descrição', y='Valor', title="Receita vs Resultado Líquido")
     st.plotly_chart(fig_dre, use_container_width=True)
-
-    despesas = dre_total[dre_total['Descrição'].str.contains("Despesa", case=False)]
-    if not despesas.empty:
-        fig_pizza_desp = px.pie(despesas, names='Descrição', values='Valor', title="Composição das Despesas", hole=0.3)
-        fig_pizza_desp.update_traces(textinfo='label+percent')
-        st.plotly_chart(fig_pizza_desp, use_container_width=True)
-
-    resultado = dre_total[dre_total['Descrição'].str.contains("Resultado Líquido", case=False)]['Valor'].sum()
-    if resultado < 0:
-        st.error(f"❌ Prejuízo apurado no período: R$ {abs(resultado):,.2f}")
-    else:
-        st.success(f"✅ Lucro apurado no período: R$ {resultado:,.2f}")
-
+    
     # Tabela dinâmica e fácil de visualizar
     st.markdown("### 📋 Tabela Completa DRE")
     st.dataframe(dre_df, use_container_width=True)
