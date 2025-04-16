@@ -510,10 +510,10 @@ elif filtro_grafico == "📘 DRE Trimestral":
     resultado_liquido = get_dre_val("Resultado liquido do exercicio")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Receita Bruta", f"R$ {receita_bruta:,.2f}")
-    col2.metric("Receita Líquida", f"R$ {receita_liquida:,.2f}")
-    col3.metric("Lucro Bruto", f"R$ {lucro_bruto:,.2f}")
-    col4.metric("Resultado Líquido", f"R$ {resultado_liquido:,.2f}")
+    col1.metric("Receita Bruta", receita_bruta)
+    col2.metric("Receita Líquida", receita_liquida)
+    col3.metric("Lucro Bruto", lucro_bruto)
+    col4.metric("Resultado Líquido", resultado_liquido)
 
     st.markdown(f"""
     <div style="background:#22304A; border-radius:10px; padding:24px; margin-top:20px;">
