@@ -317,22 +317,38 @@ elif filtro_grafico == "📗 PIS e COFINS":
     col2.metric("📌 Total Débitos", f"R$ {debito_total:,.2f}")
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
 
-    # MANTENHA AQUI OS GRÁFICOS DE BARRA E PIZZA ORIGINAIS, por exemplo:
-    if 'Crédito' in piscofins_filtrado.columns and 'Débito' in piscofins_filtrado.columns:
-        fig_bar = px.bar(
-            piscofins_filtrado, x='Mês', y=['Crédito', 'Débito'],
-            barmode='group', title='Crédito x Débito por Mês'
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
-# Gráfico de linha: apenas saldo final de cada mês (igual ao trimestre do caixa)
+    # Gráfico de linha do PIS/COFINS
+    ordem_meses = {"Janeiro": 1, "Fevereiro": 2, "Março": 3}
     pontos = []
-    for mes_nome in meses_selecionados:
-        df_mes = piscofins_filtrado[piscofins_filtrado['Mês'] == mes_nome]
-        if df_mes.empty:
-            continue
-        saldo_fim = df_mes['Saldo'].iloc[-1]
-        pontos.append({'Mês': mes_nome, 'Saldo Acumulado': saldo_fim})
 
+    # Se for apenas 1 mês (gráfico mensal)
+    if len(meses_selecionados) == 1:
+        mes_nome = meses_selecionados[0]
+        mes_num = ordem_meses[mes_nome]
+
+        df_ordenado = piscofins_df.copy()
+        df_ordenado['Ordem'] = df_ordenado['Mês'].map(ordem_meses)
+        df_ordenado = df_ordenado.sort_values(by="Ordem")
+
+        # Saldo anterior ao mês selecionado
+        saldo_anterior = df_ordenado[df_ordenado['Ordem'] < mes_num]['Saldo'].sum()
+        pontos.append({'Mês': f"{mes_nome} - Início", 'Saldo Acumulado': saldo_anterior})
+
+        # Saldo final do mês
+        df_mes = df_ordenado[df_ordenado['Mês'] == mes_nome]
+        saldo_fim = saldo_anterior + df_mes['Saldo'].sum()
+        pontos.append({'Mês': f"{mes_nome} - Fim", 'Saldo Acumulado': saldo_fim})
+
+    # Trimestre: mantém como está
+    else:
+        for mes_nome in meses_selecionados:
+            df_mes = piscofins_df[piscofins_df['Mês'] == mes_nome]
+            if df_mes.empty:
+                continue
+            saldo_fim = df_mes['Saldo'].iloc[-1]
+            pontos.append({'Mês': mes_nome, 'Saldo Acumulado': saldo_fim})
+
+    # Gráfico
     df_pontos = pd.DataFrame(pontos)
     fig_saldo_pis = px.line(
         df_pontos, x='Mês', y='Saldo Acumulado',
