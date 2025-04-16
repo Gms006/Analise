@@ -341,10 +341,6 @@ elif filtro_grafico == "📗 PIS e COFINS":
             barmode='group', title='Crédito x Débito por Mês'
         )
         st.plotly_chart(fig_bar, use_container_width=True)
-
-        fig_pie = px.pie(
-            piscofins_filtrado, names='Mês', values='Crédito',
-            title='Distribuição dos Créditos por Mês'
         )
         st.plotly_chart(fig_pie, use_container_width=True)
 
