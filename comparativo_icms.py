@@ -485,12 +485,16 @@ elif filtro_grafico == "📘 DRE Trimestral":
         "Resumo do resultado do exercício, com receitas, deduções, custos, despesas e lucro/prejuízo final. <i class='fas fa-info-circle'></i>"
     )
 
-    def get_dre_val(desc):
+     def get_dre_val(desc):
         row = dre_df[dre_df['Descrição'].str.strip().str.upper() == desc.strip().upper()]
         if not row.empty:
-            val = row['Saldo'].values[0]
+            val = str(row['Saldo'].values[0])
+            val = val.replace("R$", "").replace(" ", "")
+            # Remove pontos só se eles forem separadores de milhar (antes da vírgula)
+            if "," in val:
+                val = val.replace(".", "").replace(",", ".")
             try:
-                return float(str(val).replace("R$", "").replace(".", "").replace(".", "."))
+                return float(val)
             except Exception:
                 return 0.0
         return 0.0
