@@ -48,6 +48,28 @@ def carregar_dados():
     # leitura dos arquivos
     return entradas, saidas, caixa_df, piscofins_df, dre_df
 
+# ========== FUNÇÕES AUXILIARES ==========
+
+def calcular_saldo_com_acumulado(df, meses_filtrados):
+    df = df.sort_values("Data").copy()
+    df["Mês"] = df["Data"].dt.month
+    df["Ano"] = df["Data"].dt.year
+    df["Valor Líquido"] = df["Entradas"] - df["Saídas"]
+
+    primeiro_mes = min(meses_filtrados)
+    saldo_anterior = df[df["Mês"] < primeiro_mes]["Valor Líquido"].sum()
+
+    df_filtrado = df[df["Mês"].isin(meses_filtrados)].copy()
+    df_filtrado["Saldo Acumulado"] = df_filtrado["Valor Líquido"].cumsum() + saldo_anterior
+
+    return df_filtrado
+
+def plotar_saldo_mensal(caixa_df, meses_selecionados):
+    if 'Data' in caixa_df.columns and 'Entradas' in caixa_df.columns and 'Saídas' in caixa_df.columns:
+        df_grafico = calcular_saldo_com_acumulado(caixa_df, meses_selecionados)
+        fig = px.line(df_grafico, x="Data", y="Saldo Acumulado", title="Evolução do Saldo Acumulado - Caixa", markers=True)
+        st.plotly_chart(fig, use_container_width=True)
+
 # ========== FILTROS DINÂMICOS ==========
 st.sidebar.header("🎛️ Filtros")
 periodos = {
@@ -330,23 +352,3 @@ st.download_button("⬇️ Baixar Relatórios Completos (.xlsx)",
                    data=excel_bytes,
                    file_name="Relatorio_ICMS_Completo.xlsx",
                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-def plotar_saldo_mensal(caixa_df, meses_selecionados):
-    if 'Data' in caixa_df.columns and 'Entradas' in caixa_df.columns and 'Saídas' in caixa_df.columns:
-        df_grafico = calcular_saldo_com_acumulado(caixa_df, meses_selecionados)
-        fig = px.line(df_grafico, x="Data", y="Saldo Acumulado", title="Evolução do Saldo Acumulado - Caixa", markers=True)
-        st.plotly_chart(fig, use_container_width=True)
-
-def calcular_saldo_com_acumulado(df, meses_filtrados):
-    df = df.sort_values("Data").copy()
-    df["Mês"] = df["Data"].dt.month
-    df["Ano"] = df["Data"].dt.year
-    df["Valor Líquido"] = df["Entradas"] - df["Saídas"]
-
-    primeiro_mes = min(meses_filtrados)
-    saldo_anterior = df[df["Mês"] < primeiro_mes]["Valor Líquido"].sum()
-
-    df_filtrado = df[df["Mês"].isin(meses_filtrados)].copy()
-    df_filtrado["Saldo Acumulado"] = df_filtrado["Valor Líquido"].cumsum() + saldo_anterior
-
-    return df_filtrado
