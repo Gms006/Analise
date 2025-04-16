@@ -336,9 +336,6 @@ elif filtro_grafico == "📗 PIS e COFINS":
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
 
 elif filtro_grafico == "📘 DRE Trimestral":
-    st.subheader("📘 DRE Trimestral")
-    dre_df['Valor'] = pd.to_numeric(dre_df['Valor'], errors='coerce').fillna(0)
-    dre_total = dre_df.groupby('Descrição')['Valor'].sum().reset_index()
 
     # Gráficos principais
     grupo = dre_total[dre_total['Descrição'].str.contains("Receita|Resultado", case=False)]
