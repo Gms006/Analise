@@ -229,26 +229,21 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
 
     # Gráficos e análises
     if 'Saldo' in caixa_df.columns:
-        # Ordena os dados por data e índice original para garantir ordem real dos lançamentos
+        # Garante que estamos pegando o saldo do ÚLTIMO LANÇAMENTO COM SALDO de cada mês
         caixa_ordenado = caixa_df.reset_index().rename(columns={'index': 'OrigIndex'})
-        caixa_ordenado = caixa_ordenado.dropna(subset=['Valor Líquido'])
         caixa_ordenado['Data'] = pd.to_datetime(caixa_ordenado['Data'], errors='coerce')
-        caixa_ordenado = caixa_ordenado.sort_values(['Data', 'OrigIndex'])
+        caixa_ordenado['Mês'] = caixa_ordenado['Data'].dt.month
+        # Filtra apenas os meses selecionados
+        caixa_ordenado = caixa_ordenado[caixa_ordenado['Mês'].isin(meses_selecionados)]
+        # Pega o último saldo válido de cada mês
+        caixa_saldo_final_mes = (
+            caixa_ordenado.dropna(subset=['Saldo'])
+            .sort_values(['Data', 'OrigIndex'])
+            .groupby('Mês', as_index=False)
+            .tail(1)
+        )
+        caixa_saldo_final_mes['Mês Nome'] = caixa_saldo_final_mes['Mês'].map({1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'})
 
-        # Calcula o saldo acumulado real (considerando todo o histórico)
-        caixa_ordenado['Saldo Acumulado'] = caixa_ordenado['Valor Líquido'].cumsum()
-
-        # Filtra os dados para os meses selecionados
-        caixa_filtrado = caixa_ordenado[caixa_ordenado['Mês'].isin(meses_selecionados)]
-
-        # Obtém o saldo final de cada mês (último lançamento do mês)
-        caixa_saldo_final_mes = caixa_filtrado.groupby('Mês').tail(1)
-
-        # Mapeia os nomes dos meses
-        nomes_meses = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março'}
-        caixa_saldo_final_mes['Mês Nome'] = caixa_saldo_final_mes['Mês'].map(nomes_meses)
-
-        # Cria o gráfico de linhas
         fig_saldo = px.line(
             caixa_saldo_final_mes, x='Mês Nome', y='Saldo',
             title='Evolução Mensal do Saldo Acumulado - Caixa',
