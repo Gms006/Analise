@@ -261,17 +261,19 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     else:
         # Evolução mensal do saldo acumulado levando em conta o saldo anterior real da planilha
         if 'Saldo' in caixa_ordenado.columns:
-            # Pega o último saldo real de cada mês respeitando continuidade
-            caixa_mes = caixa_ordenado[['Data', 'Mês', 'Saldo']].copy()
-            caixa_mes['Mês Nome'] = caixa_mes['Mês'].map({1:'Janeiro', 2:'Fevereiro', 3:'Março'})
-            caixa_mes = caixa_mes.sort_values('Data').dropna(subset=['Saldo'])
+            # Corrigir evolução mensal real com base no saldo final verdadeiro
+            caixa_saldo_real = caixa_ordenado[['Data', 'Mês', 'Saldo']].copy()
+            caixa_saldo_real = caixa_saldo_real.dropna(subset=['Saldo'])
+            caixa_saldo_real['Mês Nome'] = caixa_saldo_real['Mês'].map({1:'Janeiro', 2:'Fevereiro', 3:'Março'})
 
-            # Manter apenas o último saldo de cada mês selecionado
-            caixa_mes = caixa_mes[caixa_mes['Mês'].isin(meses_selecionados)]
-            caixa_mes = caixa_mes.groupby(['Mês', 'Mês Nome']).tail(1)
+            # Ordena por data e seleciona o último saldo real de cada mês
+            caixa_saldo_real = caixa_saldo_real.sort_values('Data')
+            caixa_saldo_real = caixa_saldo_real[caixa_saldo_real['Mês'].isin(meses_selecionados)]
+            caixa_saldo_final_mes = caixa_saldo_real.groupby('Mês').tail(1)
 
+            # Gera o gráfico com os saldos finais reais
             fig_saldo = px.line(
-                caixa_mes, x='Mês Nome', y='Saldo',
+                caixa_saldo_final_mes, x='Mês Nome', y='Saldo',
                 title='Evolução Mensal do Saldo Acumulado - Caixa',
                 markers=True
             )
