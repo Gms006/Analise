@@ -52,8 +52,7 @@ filtro_grafico = st.sidebar.selectbox("Tipo de gráfico:", [
     "Apuração com Crédito Acumulado",
     "Relatórios Detalhados",
     "📘 Contabilidade e Caixa",
-    "📗 PIS",
-    "📙 COFINS",
+    "📗 PIS e COFINS",  # <-- renomeado aqui
     "📘 DRE Trimestral"
 ])
 meses_filtrados = periodos[filtro_periodo]
@@ -259,10 +258,9 @@ elif filtro_grafico == "📘 Contabilidade e Caixa":
     st.dataframe(caixa_filtrado[['Data', 'Descricao', 'Entrada', 'Saída', 'Valor Líquido']],
                  use_container_width=True)
 
-elif filtro_grafico == "📗 PIS":
-    st.subheader("📗 Apuração PIS/COFINS")
+elif filtro_grafico == "📗 PIS e COFINS":
+    st.subheader("📗 Apuração PIS e COFINS")
 
-    # Troque todas as referências para 'PIS/COFINS' por 'PISCOFINS'
     # Garantindo tipos corretos e limpeza de dados
     piscofins_df['Crédito'] = pd.to_numeric(piscofins_df['Crédito'], errors='coerce').fillna(0)
     piscofins_df['Débito'] = pd.to_numeric(piscofins_df['Débito'], errors='coerce').fillna(0)
@@ -281,13 +279,13 @@ elif filtro_grafico == "📗 PIS":
 
     # Gráfico de barras Créditos vs Débitos
     fig_pis = px.bar(piscofins_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
-                     title='Créditos vs Débitos PIS/COFINS')
+                     title='Créditos vs Débitos PIS e COFINS')
     st.plotly_chart(fig_pis, use_container_width=True)
 
     # Gráfico de linha do Saldo acumulado
     piscofins_filtrado['Saldo Acumulado'] = piscofins_filtrado['Saldo'].cumsum()
     fig_saldo_pis = px.line(piscofins_filtrado, x='Mês', y='Saldo Acumulado',
-                            title='Saldo Acumulado PIS/COFINS')
+                            title='Saldo Acumulado PIS e COFINS')
     st.plotly_chart(fig_saldo_pis, use_container_width=True)
 
     # Cards de resumo financeiro para PIS/COFINS
@@ -301,52 +299,7 @@ elif filtro_grafico == "📗 PIS":
     col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
 
     # Tabela detalhada
-    st.subheader("📋 Tabela Detalhada PIS/COFINS")
-    st.dataframe(piscofins_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
-                 use_container_width=True)
-
-elif filtro_grafico == "📙 COFINS":
-    st.subheader("📙 Apuração COFINS")
-
-    # Garantindo tipos corretos e limpeza de dados
-    piscofins_df['Crédito'] = pd.to_numeric(piscofins_df['Crédito'], errors='coerce').fillna(0)
-    piscofins_df['Débito'] = pd.to_numeric(piscofins_df['Débito'], errors='coerce').fillna(0)
-    piscofins_df['Saldo'] = piscofins_df['Crédito'] - piscofins_df['Débito']
-
-    # Filtragem dinâmica dos períodos
-    meses_filtro = {
-        "Janeiro/2025": ["Janeiro"],
-        "Fevereiro/2025": ["Fevereiro"],
-        "Março/2025": ["Março"],
-        "1º Trimestre/2025": ["Janeiro", "Fevereiro", "Março"]
-    }
-
-    meses_selecionados = meses_filtro[filtro_periodo]
-    piscofins_filtrado = piscofins_df[piscofins_df['Mês'].isin(meses_selecionados)]
-
-    # Gráfico de barras Créditos vs Débitos
-    fig_cofins = px.bar(piscofins_filtrado, x='Mês', y=['Crédito', 'Débito'], barmode='group',
-                        title='Créditos vs Débitos COFINS')
-    st.plotly_chart(fig_cofins, use_container_width=True)
-
-    # Gráfico de linha do Saldo acumulado
-    piscofins_filtrado['Saldo Acumulado'] = piscofins_filtrado['Saldo'].cumsum()
-    fig_saldo_cofins = px.line(piscofins_filtrado, x='Mês', y='Saldo Acumulado',
-                               title='Saldo Acumulado COFINS')
-    st.plotly_chart(fig_saldo_cofins, use_container_width=True)
-
-    # Cards de resumo financeiro para COFINS
-    credito_total = piscofins_filtrado['Crédito'].sum()
-    debito_total = piscofins_filtrado['Débito'].sum()
-    saldo_final = credito_total - debito_total
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("💳 Total Créditos", f"R$ {credito_total:,.2f}")
-    col2.metric("📌 Total Débitos", f"R$ {debito_total:,.2f}")
-    col3.metric("💰 Saldo Final", f"R$ {saldo_final:,.2f}")
-
-    # Tabela detalhada
-    st.subheader("📋 Tabela Detalhada COFINS")
+    st.subheader("📋 Tabela Detalhada PIS e COFINS")
     st.dataframe(piscofins_filtrado[['Mês', 'Crédito', 'Débito', 'Saldo']],
                  use_container_width=True)
 
